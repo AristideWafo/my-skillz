@@ -4,213 +4,207 @@ description: >
   Guide and enforce expert-level Docker image design, Dockerfile patterns, and Docker Compose architecture for Jerry. Trigger whenever Jerry asks about Dockerfiles, Docker Compose, containerization, image building, container security, image optimization, or multi-stage builds. Also trigger for: writing or reviewing a Dockerfile, designing a Compose stack, optimizing image size or build time, securing containers, setting up healthchecks, choosing a base image, managing dev vs prod environments with Compose, or thinking about production-ready containerization. Trigger even if Jerry just says "help me containerize this", "review my Dockerfile", or "my image is too big". Enforces: single responsibility, immutable images, explicit tags, non-root execution, layer cache strategy, observable containers, and build-once deploy-everywhere.
 ---
 
-# Docker Builder — Expert Standards
+# Docker Builder - Expert Standards
 
-> La bonne question n'est pas *"Comment écrire un Dockerfile ?"*
-> mais *"Comment construire une image reproductible, sécurisée, maintenable et déployable partout ?"*
+> The right question is not How do I write a Dockerfile?
+> It is How do I build an image that is reproducible, secure, maintainable, and deployable everywhere?
 >
-> Un Dockerfile est un contrat entre le build et le runtime. Il doit être lisible dans 6 mois sans se souvenir de rien.
+> A Dockerfile is a contract between build and runtime. It must still be readable six months later.
 
 ---
 
-## Évaluation initiale — Contexte avant design
+## Initial Assessment - Context Before Design
 
-Avant d'écrire une seule ligne de Dockerfile :
+Before writing a single Dockerfile line:
 
-1. **Langage / runtime** — JVM ? Node ? Go ? Python ? (impacte le choix de la base et du multi-stage)
-2. **Type d'artefact** — fat JAR ? binaire statique ? bundle npm ? (impacte la stratégie de layers)
-3. **Target de déploiement** — ECS Fargate ? Kubernetes ? VPS ? (impacte les contraintes sécurité)
-4. **Contrainte de taille** — réseau lent ? registry payant à la taille ? (distroless / alpine ?)
-5. **Multi-plateforme ?** — ARM + AMD64 ? (impacte le build pipeline)
-6. **Compose pour quoi ?** — dev local ? stack complète ? prod ? (Compose n'est pas un outil de prod)
-
----
-
-## Les 4 Propriétés d'une Image Production-Ready
-
-Toute décision dans un Dockerfile doit servir au moins une de ces propriétés :
-
-### 1. Reproductible
-Même code source + même Dockerfile = même image, toujours, partout.
-- Tags d'images de base **épinglés** (`node:22.18.0-alpine`, jamais `node:latest`)
-- Dépendances verrouillées (`package-lock.json`, `pom.xml` avec versions fixes)
-- Build déterministe (pas d'`apt upgrade` sans version)
-
-### 2. Immutable
-Après le build, l'image ne change plus. La configuration arrive à l'exécution.
-- Toute configuration via `ENV` ou variables d'environnement injectées au runtime
-- Pas de `RUN echo "env=prod" >> config.yml` dans le Dockerfile
-- Même image identique en dev, staging, prod — seul l'environnement change
-
-### 3. Sécurisée
-Surface d'attaque minimale, privilèges minimaux.
-- Utilisateur non-root (toujours)
-- Image de base minimale (pas `ubuntu` pour une API)
-- Pas de secrets dans le Dockerfile ou les layers
-- Tags épinglés = builds reproductibles = surface de CVE connue
-
-### 4. Observable
-L'orchestrateur doit savoir si le container est vivant et sain.
-- `HEALTHCHECK` défini dans le Dockerfile
-- Logs sur `stdout`/`stderr` (jamais dans un fichier à l'intérieur du container)
-- Labels OCI pour la traçabilité (`version`, `maintainer`, `source`)
+1. Language/runtime - JVM? Node? Go? Python?
+2. Artifact type - fat JAR? static binary? npm bundle?
+3. Deployment target - ECS Fargate? Kubernetes? VPS?
+4. Size constraints - limited network? registry cost constraints?
+5. Multi-platform - ARM + AMD64 required?
+6. Compose usage - local dev? full stack? production?
 
 ---
 
-## Le Modèle Mental : Le Layer Cake
+## Four Properties of a Production-Ready Image
 
-Chaque instruction `RUN`, `COPY`, `ADD` crée une couche. Docker cache les couches.
-La règle : **ce qui change souvent va en bas, ce qui change rarement va en haut.**
+Every Dockerfile decision should serve at least one of these properties:
 
-```
-FROM base-image           ← change rarement (base OS/runtime)
-    ↓
-COPY dependency-file .    ← change peu (pom.xml, package.json)
-RUN install-dependencies  ← invalidé seulement si dep-file change
-    ↓
-COPY source-code .        ← change souvent
-RUN build                 ← invalidé à chaque changement de code
-    ↓
+### 1) Reproducible
+Same source + same Dockerfile = same image, always.
+- Pin base image tags (node:22.18.0-alpine, never node:latest)
+- Lock dependencies (package-lock.json, pinned Maven versions)
+- Deterministic build steps
+
+### 2) Immutable
+Image is frozen after build; config is injected at runtime.
+- Configure via ENV and runtime env vars
+- Never hardcode environment-specific values in build layers
+- Same image across dev/staging/prod
+
+### 3) Secure
+Minimal attack surface and least privilege.
+- Always run as non-root
+- Use minimal official base images
+- Never bake secrets into image layers
+- Pinned tags enable predictable CVE management
+
+### 4) Observable
+The platform must know if container is alive and healthy.
+- Define HEALTHCHECK
+- Log to stdout/stderr only
+- Add OCI labels (version, maintainer, source)
+
+---
+
+## Mental Model: Layer Cake
+
+Each RUN/COPY/ADD creates a layer, and Docker caches layers.
+Rule: put rarely changing steps first, frequently changing steps later.
+
+```text
+FROM base-image
+COPY dependency-file .
+RUN install-dependencies
+COPY source-code .
+RUN build
 USER non-root
 HEALTHCHECK
-ENTRYPOINT / CMD
+ENTRYPOINT/CMD
 ```
 
-Si `COPY . .` apparaît avant `RUN install`, **chaque changement de code invalide toute l'installation des dépendances**. C'est l'anti-pattern le plus fréquent.
+If COPY . . comes before dependency install, every code change invalidates dependency cache. This is one of the most common anti-patterns.
 
 ---
 
-## Multi-Stage Build — Le Pattern Obligatoire
+## Multi-Stage Build - Mandatory Pattern
 
-Une image de build contient des outils (compilateur, maven, gradle, npm) qui ne doivent **jamais** aller en production.
+Build stage contains compilers and toolchains that must never ship to production.
 
+```text
+BUILD stage   -> heavy image with toolchain
+RUNTIME stage -> minimal image with runtime artifact only
 ```
-Stage BUILD    → image lourde avec tous les outils
-                        ↓ COPY --from=builder (seulement l'artefact)
-Stage RUNTIME  → image minimale, juste ce qui s'exécute
-```
 
-L'image finale ne contient que ce qui est nécessaire à l'exécution.
-Résultat typique : 500MB → 80MB.
+Typical result: 500MB to 80MB.
 
-→ Patterns multi-stage par stack (Spring Boot layertools, Node, Go, distroless) :
-   `view /home/claude/docker-builder/references/dockerfile.md`
-   Sections : Bases l.8 · Spring Boot l.49 · Node l.147 · Go l.187 · Distroless l.223 · Layers l.247 · .dockerignore l.294 · Healthcheck l.340 · ENTRYPOINT l.366 · BuildKit l.394
+Multi-stage patterns by stack are in references/dockerfile.md
 
 ---
 
-## Choisir sa Base Image
+## Choosing a Base Image
 
-| Besoin | Image recommandée | Éviter |
+| Need | Recommended image | Avoid |
 |---|---|---|
-| JVM production | `eclipse-temurin:21-jre-alpine` | `ubuntu` + apt install java |
-| JVM haute sécurité | `gcr.io/distroless/java21` | Toute image non-officielle |
-| Node.js | `node:22-alpine` | `node:latest` |
-| Go | `scratch` ou `distroless/static` | Toute base avec shell |
-| Python | `python:3.12-slim` | `python:3.12` (trop lourd) |
-| Nginx | `nginx:1.27-alpine` | `ubuntu` + apt install nginx |
+| JVM production | eclipse-temurin:21-jre-alpine | ubuntu + apt install java |
+| JVM high security | gcr.io/distroless/java21 | untrusted non-official images |
+| Node.js | node:22-alpine | node:latest |
+| Go | scratch or distroless/static | full distro image with shell |
+| Python | python:3.12-slim | python:3.12 full |
+| Nginx | nginx:1.27-alpine | ubuntu + apt install nginx |
 
-**Règle absolue** : toujours une image officielle Docker Hub, toujours un tag de version explicite.
+Absolute rule: official image and explicit version tag.
 
 ---
 
-## Docker Compose — Ce que c'est, ce que ce n'est pas
+## Docker Compose - What It Is and What It Is Not
 
-**Compose est un outil d'orchestration locale**, pas un outil de déploiement en production.
+Compose is local orchestration, not a production orchestrator.
 
+```text
+Compose is good for:
+- Local multi-service development
+- Integration tests
+- Demo stacks
+- CI service dependencies
+
+Compose is not for:
+- Production HA orchestration
+- Advanced load balancing
+- Auto-scaling
 ```
-✅ Compose fait :             ❌ Compose ne fait pas :
-- Dev local multi-services     - Déploiement prod (utiliser ECS, K8s)
-- Tests d'intégration          - Haute disponibilité
-- Stack de démo                - Load balancing avancé
-- CI avec services annexes     - Auto-scaling
-```
 
-**Pattern production** : le CI build l'image → la push au registry → le serveur fait `docker pull` + redémarre. On ne rebuild jamais en production.
+Production pattern: CI builds image, pushes to registry, runtime pulls and restarts. Never build in production.
 
-→ Patterns Compose (override, profils, réseaux, volumes, dev/prod) :
-   `view /home/claude/docker-builder/references/compose.md`
-   Sections : Override l.8 · Profiles l.158 · Réseaux l.210 · Volumes l.257 · Healthchecks l.300 · Dev l.333 · Prod l.360 · Env vars l.388
+Compose patterns are in references/compose.md
 
 ---
 
-## Les 6 Questions d'Or
+## Six Gold Questions
 
-Avant tout `docker build` ou `docker compose up`, valider :
+Before docker build or docker compose up:
 
-1. **Est-ce reproductible ?** — Reconstruire dans 6 mois donne la même image ?
-2. **Est-ce immutable ?** — La config arrive via env vars, pas baked dans l'image ?
-3. **Est-ce sécurisé ?** — Non-root, pas de secrets dans les layers, image minimale ?
-4. **Est-ce observable ?** — Healthcheck défini, logs sur stdout ?
-5. **Puis-je déployer la même image en dev, staging et prod ?** — Si non, c'est un problème de config, pas d'image.
-6. **Puis-je comprendre ce Dockerfile dans 6 mois sans me souvenir de rien ?** — Commentaires, structure logique, pas de RUN chaînés illisibles ?
+1. Is this reproducible six months from now?
+2. Is this immutable at runtime?
+3. Is this secure (non-root, no secrets, minimal image)?
+4. Is this observable (healthcheck + stdout logs)?
+5. Can the same image run in dev/staging/prod?
+6. Can someone understand this Dockerfile quickly later?
 
 ---
 
-## Anti-patterns — Signal d'Alarme Immédiat
+## Anti-Patterns - Immediate Red Flags
 
-| Anti-pattern | Criticité | Principe violé | Correction |
+| Anti-pattern | Severity | Violated principle | Fix |
 |---|---|---|---|
-| `FROM ubuntu` pour une API | 🔴 | Sécurité + Taille | Image officielle minimale |
-| `FROM node:latest` | 🔴 | Reproductible | Tag de version épinglé |
-| `COPY . .` avant `RUN npm install` | 🔴 | Layer cache | Copier `package.json` d'abord |
-| Secrets dans `ENV` ou `RUN` | 🔴 | Sécurité | Docker secrets ou secret manager |
-| `USER root` (implicite ou explicite) | 🔴 | Sécurité | `RUN useradd + USER` |
-| Pas de `.dockerignore` | 🟠 | Performance + Sécurité | Exclure `.git`, `node_modules`, `.env` |
-| Pas de `HEALTHCHECK` | 🟠 | Observable | Ajouter avant `ENTRYPOINT` |
-| Build sans multi-stage | 🟠 | Taille + Sécurité | Séparer build et runtime |
-| `docker build` en production | 🟠 | Immutable | Build en CI, deploy depuis registry |
-| `ADD url http://...` | 🟡 | Reproductible | `RUN curl` ou `COPY --from` |
-| Pas de labels OCI | 🟡 | Observable | Ajouter `LABEL org.opencontainers.image.*` |
-| `RUN apt-get update && apt-get install` sans version | 🟡 | Reproductible | Épingler les versions de packages |
+| FROM ubuntu for a simple API | Critical | Security + size | Use minimal official base image |
+| FROM node:latest | Critical | Reproducibility | Pin explicit version |
+| COPY . . before npm install | Critical | Cache strategy | Copy dependency files first |
+| Secrets in ENV or RUN | Critical | Security | Use secret manager/runtime injection |
+| Running as root | Critical | Security | Create user + USER instruction |
+| Missing .dockerignore | Important | Performance + security | Exclude .git, node_modules, .env |
+| Missing HEALTHCHECK | Important | Observability | Add healthcheck before entrypoint |
+| No multi-stage build | Important | Security + size | Split build and runtime stages |
+| docker build in production | Important | Immutability | Build in CI, deploy pulled image |
+| ADD from URL blindly | Recommended | Reproducibility | Prefer COPY --from or verified curl |
+| Missing OCI labels | Recommended | Traceability | Add org.opencontainers.image labels |
+| Unpinned apt package versions | Recommended | Reproducibility | Pin versions where possible |
 
 ---
 
-## Sécurité Container — Principes
+## Container Security - Core Principles
 
-→ Hardening complet (capabilities, read-only FS, Trivy, Hadolint, runtime limits) :
-   `view /home/claude/docker-builder/references/security.md`
-   Sections : Non-root l.8 · Read-only FS l.47 · Capabilities l.82 · Trivy l.118 · Hadolint l.191 · Runtime l.254 · Secrets l.292 · Checklist l.325
+Detailed hardening patterns are in references/security.md.
 
-Résumé des principes :
-- **Principe du moindre privilège** : un container n'a que les droits dont il a besoin
-- **Surface d'attaque minimale** : moins il y a dans l'image, moins il y a à exploiter
-- **Immutabilité du filesystem** : le container ne devrait pas pouvoir s'écrire lui-même
-- **Isolation réseau** : les services qui n'ont pas besoin de se parler ne doivent pas se voir
+Summary:
+- Least privilege
+- Minimal attack surface
+- Immutable filesystem when possible
+- Network isolation by default
 
 ---
 
-## Checklist — Image Production-Ready
+## Production-Ready Image Checklist
 
-**Dockerfile**
-- [ ] Image de base officielle avec tag de version épinglé ?
-- [ ] Multi-stage build (séparation build / runtime) ?
-- [ ] `COPY dependency-file` avant `COPY source` (layer cache) ?
-- [ ] `.dockerignore` présent et complet ?
-- [ ] Utilisateur non-root (`USER`) défini ?
-- [ ] `HEALTHCHECK` présent ?
-- [ ] Labels OCI (`version`, `source`, `maintainer`) ?
-- [ ] Pas de secrets dans les layers ?
-- [ ] `ENTRYPOINT` avec forme exec (`["java", "-jar"]`, pas shell form) ?
+Dockerfile:
+- [ ] Official base image with pinned tag
+- [ ] Multi-stage build
+- [ ] Dependency copy/install before source copy
+- [ ] .dockerignore present
+- [ ] Non-root USER defined
+- [ ] HEALTHCHECK present
+- [ ] OCI labels present
+- [ ] No secrets in layers
+- [ ] ENTRYPOINT uses exec form
 
-**Compose**
-- [ ] Override files séparés (base + dev + prod) ?
-- [ ] Variables dans `.env`, pas hardcodées dans le YAML ?
-- [ ] Réseaux nommés et dédiés par domaine fonctionnel ?
-- [ ] Volumes nommés pour les données persistantes ?
-- [ ] `healthcheck` + `depends_on: service_healthy` pour l'ordre de démarrage ?
-- [ ] Pas de `build:` dans le Compose de production ?
+Compose:
+- [ ] Base + dev/prod override separation
+- [ ] Variables in env files, not hardcoded
+- [ ] Named networks by functional domain
+- [ ] Named volumes for persistent data
+- [ ] healthcheck + service_healthy dependencies
+- [ ] No build in production compose
 
 ---
 
-## Ce que ce Skill Produit
+## What This Skill Produces
 
-**Dockerfile complet** — Multi-stage, non-root, healthcheck, labels, layer-optimisé, adapté au runtime fourni.
+Complete Dockerfile - Multi-stage, non-root, healthcheck-enabled, label-compliant, cache-optimized.
 
-**Review critique** — Audit d'un Dockerfile ou Compose existant avec criticité (🔴/🟠/🟡), principe violé, et correction concrète ligne par ligne.
+Critical review - Dockerfile/Compose audit with severity and concrete fixes.
 
-**Architecture Compose** — Structure base + override dev/prod, réseaux, volumes, profils.
+Compose architecture - base + overrides, networks, volumes, profile strategy.
 
-**Optimisation** — Réduction de taille d'image, accélération du build par layer strategy et BuildKit cache.
+Optimization plan - image size reduction and build acceleration.
 
-**Security upgrade** — Identification des failles dans un Dockerfile existant et corrections.
+Security upgrade - hardening recommendations and implementation steps.
