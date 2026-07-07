@@ -1,28 +1,28 @@
 # my-skillz
 
-Repository de skills Copilot pour cadrer des taches DevOps/SRE/Platform avec un niveau Senior/Staff.
+A Copilot skills repository to frame DevOps/SRE/Platform tasks with Senior/Staff-level standards.
 
-Ce depot contient des skills reutilisables, chacun avec:
-- un fichier `SKILL.md` (role, scope, triggers, methode, standards)
-- des references dans `references/` (patterns, anti-patterns, exemples)
+This repository contains reusable skills, each with:
+- a `SKILL.md` file (role, scope, triggers, method, standards)
+- references in `references/` (patterns, anti-patterns, examples)
 
-## Objectif
+## Purpose
 
-Fournir un framework clair pour:
-- produire des reponses plus coherentes et actionnables
-- imposer des standards techniques (securite, idempotence, maintenabilite)
-- eviter les reponses generiques ou hors contexte
+Provide a clear framework to:
+- produce more consistent and actionable outputs
+- enforce technical standards (security, idempotence, maintainability)
+- avoid generic or out-of-context responses
 
-## Skills disponibles
+## Available Skills
 
-- `ansible-project-builder/`: architecture Ansible production-ready (roles, inventories, variables, vault, CI/CD)
-- `cicd-pipeline-builder/`: design CI/CD moderne (build once, artifact promotion, DevSecOps gates)
-- `docker-builder/`: Dockerfile et Compose durcis, optimises, et deployables
-- `grafana-dashboard-builder/`: creation/audit de dashboards Grafana avec approche KISS
-- `sre-observability-expert/`: diagnostic incident, observabilite, fiabilite, performance
-- `doc-coauthoring/`: guide de co-redaction documentaire
+- `ansible-project-builder/`: production-ready Ansible architecture (roles, inventories, variables, vault, CI/CD)
+- `cicd-pipeline-builder/`: modern CI/CD design (build once, artifact promotion, DevSecOps gates)
+- `docker-builder/`: hardened, optimized, and deployable Dockerfile/Compose patterns
+- `grafana-dashboard-builder/`: Grafana dashboard creation and audit with a strict KISS approach
+- `sre-observability-expert/`: incident diagnosis, observability, reliability, and performance
+- `doc-coauthoring/`: documentation co-authoring guidance
 
-## Structure du repo
+## Repository Structure
 
 ```text
 my-skillz/
@@ -35,38 +35,38 @@ my-skillz/
     └── doc-coauthoring.md
 ```
 
-## Convention d'un skill
+## Skill Convention
 
-Chaque `SKILL.md` devrait contenir au minimum:
-- frontmatter YAML: `name`, `description`
-- quand declencher le skill (triggers explicites)
-- methode de travail (etapes de raisonnement)
-- regles non negociables
-- anti-patterns frequents
-- livrables attendus
+Each `SKILL.md` should include at least:
+- YAML frontmatter: `name`, `description`
+- when to trigger the skill (explicit triggers)
+- working method (reasoning steps)
+- non-negotiable rules
+- common anti-patterns
+- expected deliverables
 
-Bonnes pratiques:
-- rester concret et orienter vers l'action
-- preferer les patterns stables plutot que les outils a la mode
-- separer la theorie (references) et la methode (SKILL.md)
-- garder un style uniforme entre tous les skills
+Best practices:
+- stay concrete and action-oriented
+- prefer stable patterns over trendy tools
+- separate theory (references) from execution method (`SKILL.md`)
+- keep style and structure consistent across skills
 
-## Ajouter un nouveau skill
+## Add a New Skill
 
-1. Creer un dossier `<nouveau-skill>/`.
-2. Ajouter `SKILL.md` avec frontmatter + sections standard.
-3. Ajouter `references/` avec docs courtes et ciblees.
-4. Verifier que les triggers ne chevauchent pas trop les skills existants.
-5. Tester le skill sur 2-3 prompts reels.
+1. Create a `<new-skill>/` folder.
+2. Add a `SKILL.md` file with frontmatter + standard sections.
+3. Add a `references/` directory with short, targeted docs.
+4. Ensure triggers do not overlap too much with existing skills.
+5. Test the skill on 2-3 real prompts.
 
-## Checklist qualite
+## Quality Checklist
 
-- scope clair (ce que le skill fait / ne fait pas)
-- hypothese de contexte explicite
-- recommandations verifiables
-- sections references faciles a charger a la demande
-- langage simple, sans ambiguite
+- clear scope (what the skill does / does not do)
+- explicit context assumptions
+- verifiable recommendations
+- reference sections easy to load on demand
+- simple, unambiguous language
 
-## Licence
+## License
 
-Ce projet est distribue sous licence `MIT`. Voir `LICENSE`.
+This project is released under the `MIT` license. See `LICENSE`.
