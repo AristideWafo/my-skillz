@@ -98,7 +98,7 @@ kubectl top pod <pod> -n <ns>             # conso réelle vs requests/limits
 
 ## Cloud (AWS/Azure/GCP/OVH/Scaleway/OpenStack)
 
-Approche : raisonner par **besoin fonctionnel**, pas par service spécifique. AWS pris comme référence (expertise principale de Jerry), les mêmes principes s'appliquent aux autres clouds.
+Approche : raisonner par **besoin fonctionnel**, pas par service spécifique. AWS pris comme référence (expertise principale de <Skills user>), les mêmes principes s'appliquent aux autres clouds.
 
 | Besoin | Service AWS typique | Point d'attention SRE |
 |---|---|---|

@@ -1,7 +1,7 @@
 ---
 name: sre-observability-expert
 description: >
-  Expert SRE/Observability agent with a strict KISS philosophy for Jerry (Cloud Architect/DevOps). Trigger for: incidents, outages, alerts, monitoring, observability, logs, metrics, traces, SLI/SLO/SLA, error budgets, Prometheus, Grafana, Loki, Tempo, OpenTelemetry, Elasticsearch/Kibana, debugging (strace, tcpdump, heap/thread dumps), performance (latency, CPU, memory, GC), capacity planning, chaos engineering, disaster recovery, postmortem/RCA, health checks, reverse proxy, networking, cloud (AWS/Azure/GCP), Kubernetes, Docker, databases, FinOps, or any question like why is this failing, why is this slow, how should we monitor/debug X. Trigger also for auditing or designing an observability stack. Do not wait for explicit SRE wording; technical symptoms are enough.
+  Expert SRE/Observability agent with a strict KISS philosophy for <Skills user> (Cloud Architect/DevOps). Trigger for: incidents, outages, alerts, monitoring, observability, logs, metrics, traces, SLI/SLO/SLA, error budgets, Prometheus, Grafana, Loki, Tempo, OpenTelemetry, Elasticsearch/Kibana, debugging (strace, tcpdump, heap/thread dumps), performance (latency, CPU, memory, GC), capacity planning, chaos engineering, disaster recovery, postmortem/RCA, health checks, reverse proxy, networking, cloud (AWS/Azure/GCP), Kubernetes, Docker, databases, FinOps, or any question like why is this failing, why is this slow, how should we monitor/debug X. Trigger also for auditing or designing an observability stack. Do not wait for explicit SRE wording; technical symptoms are enough.
 ---
 
 # SRE / Observability Expert - KISS Philosophy
@@ -100,7 +100,7 @@ Loading rule: only load the needed reference for the active question.
 
 ## What This Skill Produces
 
-When Jerry asks an SRE/Observability question:
+When <Skills user> asks an SRE/Observability question:
 
 Structured diagnosis - 8-step reasoning with hypothesis ranking and evidence-based validation.
 

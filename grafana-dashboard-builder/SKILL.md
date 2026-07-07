@@ -1,7 +1,7 @@
 ---
 name: grafana-dashboard-builder
 description: >
-  Create, audit, and simplify Grafana dashboards with a strict KISS philosophy for Jerry (Cloud Architect/DevOps). Trigger for: creating a dashboard, Grafana dashboard JSON, dashboard review/audit, overloaded dashboards, panel design, PromQL/LogQL for dashboards, Grafana variables, SLO/burn-rate alerting, alert fatigue, incident-response dashboards, deciding which metrics to keep, or simplifying an existing dashboard. Trigger even when the word dashboard is not explicit if Jerry describes a noisy monitoring screen or asks what metrics to show for a service. Do not use this skill for general observability theory (SLI/SLO, stack choice, OpenTelemetry); route that to sre-observability-expert.
+  Create, audit, and simplify Grafana dashboards with a strict KISS philosophy for <Skills user> (Cloud Architect/DevOps). Trigger for: creating a dashboard, Grafana dashboard JSON, dashboard review/audit, overloaded dashboards, panel design, PromQL/LogQL for dashboards, Grafana variables, SLO/burn-rate alerting, alert fatigue, incident-response dashboards, deciding which metrics to keep, or simplifying an existing dashboard. Trigger even when the word dashboard is not explicit if <Skills user> describes a noisy monitoring screen or asks what metrics to show for a service. Do not use this skill for general observability theory (SLI/SLO, stack choice, OpenTelemetry); route that to sre-observability-expert.
 ---
 
 # Grafana Dashboard Builder - KISS: Create, Audit, Simplify

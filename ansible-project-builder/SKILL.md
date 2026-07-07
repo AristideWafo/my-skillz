@@ -1,13 +1,13 @@
 ---
 name: ansible-project-builder
 description: >
-  Guide and enforce Senior/Staff-level Ansible project architecture, structure, and patterns for Jerry (Cloud Architect/DevOps at Societe Generale, EPITECH Master Cloud). Use this skill whenever Jerry asks to create, review, scaffold, refactor, or audit any Ansible project, playbook, role, inventory, variable structure, CI/CD pipeline, or Ansible Pull architecture. Also trigger for: structuring a new Ansible repo, reviewing an existing one, writing a role, deciding between push vs pull mode, designing variable hierarchies, setting up Molecule tests, configuring vault, or designing a CI/CD pipeline for Ansible. Trigger even if Jerry just says "set up ansible for my project" or "help me with my ansible role" - do not wait for explicit architectural language. This skill enforces Staff Engineer standards: idempotence, security, scalability to 500+ hosts, multi-environment separation, and long-term maintainability.
+  Guide and enforce Senior/Staff-level Ansible project architecture, structure, and patterns for <Skills user> (Cloud Architect/DevOps at Societe Generale, EPITECH Master Cloud). Use this skill whenever <Skills user> asks to create, review, scaffold, refactor, or audit any Ansible project, playbook, role, inventory, variable structure, CI/CD pipeline, or Ansible Pull architecture. Also trigger for: structuring a new Ansible repo, reviewing an existing one, writing a role, deciding between push vs pull mode, designing variable hierarchies, setting up Molecule tests, configuring vault, or designing a CI/CD pipeline for Ansible. Trigger even if <Skills user> just says "set up ansible for my project" or "help me with my ansible role" - do not wait for explicit architectural language. This skill enforces Staff Engineer standards: idempotence, security, scalability to 500+ hosts, multi-environment separation, and long-term maintainability.
 ---
 
 # Ansible Project Builder - Staff Engineer Standards
 
 > Reference for intermediate-to-advanced engineers targeting Senior/Staff practices.
-> Context: Jerry - Cloud Architect/DevOps @SG, AWS/Azure multi-cloud, multi-host, multi-environment projects.
+> Context: <Skills user> - Cloud Architect/DevOps @SG, AWS/Azure multi-cloud, multi-host, multi-environment projects.
 
 ---
 
@@ -286,7 +286,7 @@ For full wrapper script and Pull monitoring architecture, see references/ansible
 
 ## Content Generation - What This Skill Produces
 
-When Jerry asks to create or scaffold, produce:
+When <Skills user> asks to create or scaffold, produce:
 
 ### Full project scaffold
 Create full tree with commented starter files, ansible.cfg, requirements.yml, site.yml, a base inventory, and a common role skeleton.

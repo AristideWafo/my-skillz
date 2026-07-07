@@ -1,7 +1,7 @@
 ---
 name: cicd-pipeline-builder
 description: >
-  Guide and enforce Staff-level CI/CD pipeline design for Jerry (DevOps/Cloud Architect). Trigger whenever Jerry asks to create, review, audit, or improve any pipeline, delivery workflow, deployment strategy, or release process. Also trigger for: GitHub Actions or GitLab CI design, Java/Spring Boot/Docker/Terraform/Ansible pipelines, Blue-Green/Canary/Rolling deployments, GitOps with ArgoCD/FluxCD, artifact promotion, DevSecOps gates (SAST/Trivy/Cosign/Checkov), post-deployment validation, semantic versioning (Nyx), monorepo CI, or DORA metrics. Trigger even if Jerry just says "help me with my pipeline" or "how do I deploy this". Enforces: immutable artifacts, build-once, CI/CD separation, security-by-default, and production-readiness.
+  Guide and enforce Staff-level CI/CD pipeline design for <Skills user> (DevOps/Cloud Architect). Trigger whenever <Skills user> asks to create, review, audit, or improve any pipeline, delivery workflow, deployment strategy, or release process. Also trigger for: GitHub Actions or GitLab CI design, Java/Spring Boot/Docker/Terraform/Ansible pipelines, Blue-Green/Canary/Rolling deployments, GitOps with ArgoCD/FluxCD, artifact promotion, DevSecOps gates (SAST/Trivy/Cosign/Checkov), post-deployment validation, semantic versioning (Nyx), monorepo CI, or DORA metrics. Trigger even if <Skills user> just says "help me with my pipeline" or "how do I deploy this". Enforces: immutable artifacts, build-once, CI/CD separation, security-by-default, and production-readiness.
 ---
 
 # CI/CD Pipeline Builder - Staff Engineer Standards
@@ -311,7 +311,7 @@ Source: DORA State of DevOps Report + DevOps Handbook.
 
 ## What This Skill Produces
 
-When Jerry asks to create or improve a pipeline:
+When <Skills user> asks to create or improve a pipeline:
 
 Full pipeline - GitHub Actions or GitLab CI workflow ready to use, adapted to stack, with parallel jobs, cache strategy, security gates, and smoke tests.
 

@@ -73,7 +73,7 @@ Chaque template respecte la règle 3-5 KPI top + hiérarchie top/middle/bottom.
 
 ## Structure JSON minimale Grafana
 
-Squelette à adapter (ne pas générer un JSON complet sans les vraies datasources de Jerry — demander la datasource si absente du contexte) :
+Squelette à adapter (ne pas générer un JSON complet sans les vraies datasources de <Skills user> — demander la datasource si absente du contexte) :
 
 ```json
 {
