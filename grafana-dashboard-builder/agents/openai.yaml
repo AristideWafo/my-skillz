@@ -1,0 +1,4 @@
+interface:
+  display_name: "Grafana Dashboard Builder"
+  short_description: "Create focused, actionable Grafana dashboards"
+  default_prompt: "Use $grafana-dashboard-builder to design or simplify this dashboard around its reader's decision."

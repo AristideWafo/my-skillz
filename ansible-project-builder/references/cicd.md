@@ -1,139 +1,37 @@
-# .github/workflows/ansible-ci.yml
-name: Ansible CI/CD
+# Ansible validation in CI
 
-on:
-  push:
-    branches: [main, develop]
-  pull_request:
-    branches: [main]
+Read this reference for Ansible-specific checks. Use the CI/CD skill when redesigning the wider delivery system.
 
-env:
-  ANSIBLE_FORCE_COLOR: "1"
-  PY_COLORS: "1"
+## Version the toolchain
 
-jobs:
-  lint:
-    name: Lint
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+Pin or constrain Ansible, ansible-lint, Molecule, Python, drivers, collections, and roles in the project's dependency mechanism. Update them intentionally and review porting guides before changing supported major versions.
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-          cache: pip
+## Useful validation layers
 
-      - name: Install dependencies
-        run: |
-          pip install ansible ansible-lint yamllint
-          ansible-galaxy collection install -r requirements.yml
+Select the layers relevant to the change:
 
-      - name: Run yamllint
-        run: yamllint -c .yamllint.yml .
+1. YAML parsing and repository formatting rules.
+2. `ansible-playbook --syntax-check` with representative inventory and variables.
+3. `ansible-lint` using the repository's configured profile.
+4. Inventory parsing and representative effective-variable checks.
+5. Molecule or role integration scenarios.
+6. Check mode and diff against an isolated environment where modules support it.
+7. A real first run and idempotence run in a disposable target.
+8. A staged, bounded rollout with service verification.
 
-      - name: Run ansible-lint
-        run: ansible-lint --profile production
+Do not claim production readiness from lint and syntax checks alone.
 
-  molecule:
-    name: Molecule — ${{ matrix.role }}
-    runs-on: ubuntu-latest
-    needs: lint
-    strategy:
-      matrix:
-        role:
-          - nginx
-          - postgresql
-          - base-os
-          - monitoring-agent
-      fail-fast: false    # Continuer les tests des autres rôles si un échoue
-    steps:
-      - uses: actions/checkout@v4
+## CI safety
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-          cache: pip
+- Do not expose vault credentials or cloud access to untrusted pull-request code.
+- Pin third-party CI actions or workflow dependencies to reviewed immutable revisions.
+- Keep production deployment separate from ordinary validation and require the intended authorization.
+- Bound jobs with timeouts and retain useful failure evidence without publishing secrets.
 
-      - name: Install Molecule
-        run: pip install molecule molecule-docker ansible docker
+## Molecule
 
-      - name: Run Molecule tests
-        working-directory: roles/${{ matrix.role }}
-        run: molecule test
+Test observable role behavior: packages, files, permissions, service state, listeners, and idempotence. Avoid tests that merely duplicate the role's implementation line by line.
 
-  check-staging:
-    name: Dry-run (Staging)
-    needs: molecule
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
-    steps:
-      - uses: actions/checkout@v4
+## Done
 
-      - name: Configure AWS credentials (OIDC — pas de clés statiques)
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/ansible-runner-staging
-          aws-region: eu-west-1
-
-      - name: Get vault password from SSM
-        run: |
-          aws ssm get-parameter \
-            --name "/ansible/vault-pass/staging" \
-            --with-decryption \
-            --query "Parameter.Value" \
-            --output text > /tmp/vault-pass-staging
-          chmod 400 /tmp/vault-pass-staging
-
-      - name: Ansible dry-run on staging
-        run: |
-          ansible-playbook site.yml \
-            -i inventories/staging/ \
-            --check \
-            --diff \
-            --vault-password-file /tmp/vault-pass-staging
-
-      - name: Cleanup vault password file
-        if: always()
-        run: rm -f /tmp/vault-pass-staging
-
-  deploy-staging:
-    name: Deploy to Staging
-    needs: check-staging
-    runs-on: ubuntu-latest
-    environment: staging
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/ansible-runner-staging
-          aws-region: eu-west-1
-
-      - name: Deploy to staging
-        run: |
-          ansible-playbook site.yml \
-            -i inventories/staging/ \
-            --vault-password-file <(aws ssm get-parameter --name "/ansible/vault-pass/staging" --with-decryption --query "Parameter.Value" --output text)
-
-  deploy-production:
-    name: Deploy to Production
-    needs: deploy-staging
-    runs-on: ubuntu-latest
-    environment: production    # Requiert approbation manuelle dans GitHub Environments
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/ansible-runner-prod
-          aws-region: eu-west-1
-
-      - name: Deploy to production (rolling 10%)
-        run: |
-          ansible-playbook site.yml \
-            -i inventories/production/ \
-            --vault-password-file <(aws ssm get-parameter --name "/ansible/vault-pass/prod" --with-decryption --query "Parameter.Value" --output text)
+The pipeline proves affected content parses, follows configured rules, behaves correctly in representative targets, and fails safely. Report validations that require external inventory, credentials, or a production window.

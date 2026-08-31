@@ -1,99 +1,42 @@
-# Templates de dashboards par cas d'usage
+# Dashboard composition patterns
 
-Table des matières :
-- [API Health](#api-health)
-- [DB Performance](#db-performance)
-- [Error Monitoring](#error-monitoring)
-- [Structure JSON minimale Grafana](#structure-json-minimale-grafana)
+Read this reference after the audience and dashboard question are known.
 
-Chaque template respecte la règle 3-5 KPI top + hiérarchie top/middle/bottom.
+## Service health
 
----
+Use a top-to-bottom path:
 
-## API Health
+1. user-impact summary or SLO state;
+2. request rate, errors, and latency distribution;
+3. saturation and dependency health;
+4. version, region, instance, or endpoint drill-down;
+5. links to logs, traces, runbooks, and related dashboards.
 
-**Objectif** : un SRE en astreinte comprend en 10s si l'API est en bonne santé.
+Not every service needs every layer. Keep only signals that help the intended reader decide or investigate.
 
-**TOP (Golden Signals)** :
-1. Request Rate (RED - Rate)
-2. Error Rate % (RED - Errors)
-3. Latency p50/p99 (RED - Duration)
-4. Saturation (CPU/mémoire ou thread pool busy)
+## Resource or platform dashboard
 
-**MIDDLE** :
-- Comparaison vs période équivalente (hier/semaine dernière)
-- Répartition par code HTTP (2xx/4xx/5xx)
+Lead with capacity and saturation for the managed resource, then show demand and errors. Normalize comparisons when instances differ in size. Separate workloads whose magnitude would hide smaller but important series.
 
-**BOTTOM (debug)** :
-- Latence par endpoint (top 10 les plus lents)
-- Erreurs par instance/pod
+## Business process dashboard
 
-**Ne PAS inclure** : nombre total de requêtes depuis le déploiement (vanity metric), version du service en gros chiffre décoratif.
+Define the process outcome and time window before choosing technical signals. Show volume, success/failure, processing delay, backlog, and data freshness when they affect the decision.
 
----
+## Incident overview
 
-## DB Performance
+Optimize for rapid shared understanding:
 
-**TOP** :
-1. Query Latency p99
-2. Connections actives / pool max (saturation)
-3. Erreurs de connexion / timeouts
-4. Replication lag (si applicable)
+- current impact and affected scope;
+- start time and recent changes;
+- traffic, errors, latency, saturation;
+- affected dependencies and regions;
+- annotations for deploys and mitigations;
+- links to the incident record and detailed views.
 
-**MIDDLE** :
-- Slow queries (count sur la période)
-- Cache hit ratio (si Redis/cache devant la DB)
+## Panel review
 
-**BOTTOM** :
-- Top requêtes les plus coûteuses (par temps cumulé)
-- Locks/deadlocks détectés
+For each panel, record purpose, query owner, unit, expected range, abnormal interpretation, action or drill-down, and missing-data behavior. Move deep diagnostic detail away from the primary view when it overwhelms incident recognition.
 
-**Ne PAS inclure** : métriques disque brutes sans lien avec un seuil d'action (sauf si directement lié à un incident récurrent).
+## JSON generation
 
----
-
-## Error Monitoring
-
-**TOP** :
-1. Error Rate global (%, lié au SLO error budget)
-2. Burn Rate error budget (court terme + long terme)
-3. Nombre d'erreurs par service (si multi-service)
-
-**MIDDLE** :
-- Tendance error rate sur 24h/7j
-- Top erreurs par type/message (groupées)
-
-**BOTTOM** :
-- Traces des erreurs récentes (lien vers Tempo si dispo)
-- Logs corrélés par trace_id
-
-**Principe** : ce dashboard doit toujours répondre à "sommes-nous en train de consommer notre error budget plus vite que prévu ?" — pas juste lister des erreurs brutes.
-
----
-
-## Structure JSON minimale Grafana
-
-Squelette à adapter (ne pas générer un JSON complet sans les vraies datasources de <Skills user> — demander la datasource si absente du contexte) :
-
-```json
-{
-  "title": "API Health — <service>",
-  "tags": ["sre", "api", "<service>"],
-  "templating": {
-    "list": [
-      { "name": "env", "type": "query", "query": "label_values(env)" },
-      { "name": "service", "type": "query", "query": "label_values(service)" }
-    ]
-  },
-  "panels": [
-    {
-      "title": "Request Rate",
-      "type": "timeseries",
-      "gridPos": { "h": 6, "w": 6, "x": 0, "y": 0 },
-      "targets": [{ "expr": "sum(rate(http_requests_total{service=\"$service\"}[5m]))" }]
-    }
-  ]
-}
-```
-
-**Règle** : `gridPos` doit refléter la hiérarchie top/middle/bottom (y croissant = importance décroissante). Un panel TOP a une hauteur (`h`) et une position prioritaire, jamais noyé au milieu de panels secondaires.
+Inspect the target Grafana version, datasource UID/type, provisioning method, existing JSON model, variables, and library panels before generating JSON. Validate imported JSON in a non-production Grafana instance or with the repository's schema/tooling.

@@ -1,78 +1,32 @@
-# Cheatsheet PromQL / LogQL pour dashboards
+# PromQL and LogQL review guide
 
-Requêtes de base, volontairement simples (cohérent avec la règle KISS : privilégier la lisibilité à l'exhaustivité).
+Read this reference for query design and review. Verify syntax and function behavior against the deployed Prometheus, Loki, and Grafana versions.
 
----
+## PromQL
 
-## PromQL — Golden Signals
+- Use rates for counters over a window appropriate to scrape interval and decision horizon.
+- Preserve required labels explicitly when aggregating.
+- Compare histogram quantiles only when bucket boundaries and aggregation are compatible.
+- Decide whether missing series means zero, no traffic, scrape failure, or unknown before filling values.
+- Avoid regex and joins over unbounded label sets without checking query cost.
+- Use recording rules for repeated expensive expressions with clear ownership and tests.
 
-```promql
-# Rate (RED)
-sum(rate(http_requests_total{service="$service"}[5m])) by (service)
+Review questions:
 
-# Errors % (RED)
-sum(rate(http_requests_total{service="$service", status=~"5.."}[5m]))
-/
-sum(rate(http_requests_total{service="$service"}[5m]))
+1. Is the metric a counter, gauge, classic histogram, or native histogram?
+2. Are numerator and denominator aggregated over the same labels and time window?
+3. Can resets, sparse traffic, or missing targets distort the result?
+4. Does the query preserve the dimensions the panel promises?
+5. Is the range long enough for the event rate but short enough for the intended response?
 
-# Duration p99 (RED, depuis histogram)
-histogram_quantile(0.99,
-  sum(rate(http_request_duration_seconds_bucket{service="$service"}[5m])) by (le)
-)
+## LogQL
 
-# Saturation (USE) — exemple CPU pod
-sum(rate(container_cpu_usage_seconds_total{pod=~"$service.*"}[5m])) by (pod)
-/
-sum(kube_pod_container_resource_limits{resource="cpu", pod=~"$service.*"}) by (pod)
-```
+- Filter streams with indexed labels before parsing line content.
+- Parse only the fields needed for the question.
+- Keep high-cardinality values in parsed fields rather than stream labels.
+- Bound query time and volume; a broad regex across long retention can be expensive.
+- Separate log-volume or error-rate metrics from exemplar lines when both are useful.
 
-## PromQL — Error Budget / Burn Rate
+## Validation
 
-```promql
-# Burn rate fenêtre courte (1h) — SLO 99.9%
-(
-  sum(rate(http_requests_total{status=~"5..", service="$service"}[1h]))
-  /
-  sum(rate(http_requests_total{service="$service"}[1h]))
-) / (1 - 0.999)
-
-# Idem fenêtre longue (6h) — à combiner avec la fenêtre courte pour l'alerte
-# Alerte typique : burn rate court > 14.4 ET burn rate long > 14.4 (pattern Google SRE 2%/1h)
-```
-
-## PromQL — Saturation DB / Connection Pool
-
-```promql
-# Connexions actives vs max
-pg_stat_activity_count{state="active"} / pg_settings_max_connections
-
-# Slow queries (exemple exporter Postgres)
-rate(pg_stat_statements_calls{query=~".*"}[5m])
-```
-
----
-
-## LogQL — Error Monitoring
-
-```logql
-# Taux d'erreur par service depuis les logs
-sum by (service) (
-  rate({namespace="prod"} |= "ERROR" [5m])
-)
-
-# Top messages d'erreur groupés
-sum by (message) (
-  count_over_time({namespace="prod"} |= "ERROR" | json | line_format "{{.message}}" [1h])
-)
-
-# Corrélation avec trace_id pour drill-down depuis un dashboard error
-{namespace="prod"} |= "ERROR" | json | trace_id="$trace_id"
-```
-
----
-
-## Règles d'usage dans un dashboard
-
-- Toute requête PromQL/LogQL affichée dans un panel doit tenir en **une ligne lisible** ou être accompagnée d'un commentaire expliquant pourquoi elle est complexe
-- Préférer une **recording rule** à une requête PromQL lourde répétée sur plusieurs dashboards (performance + lisibilité)
-- Ne jamais utiliser un label à cardinalité illimitée (`user_id`, `request_id`) dans une requête de dashboard — voir `sre-observability-expert/references/observability-stack.md` pour le détail cardinalité
+Run queries against representative normal, failure, no-traffic, and missing-data periods. Check returned labels, units, cardinality, query duration, and whether dashboard transformations alter the meaning.

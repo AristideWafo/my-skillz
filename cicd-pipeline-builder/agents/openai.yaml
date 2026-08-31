@@ -1,0 +1,4 @@
+interface:
+  display_name: "CI/CD Pipeline Builder"
+  short_description: "Design secure, verifiable delivery workflows"
+  default_prompt: "Use $cicd-pipeline-builder to improve this delivery workflow while preserving the repository's existing conventions."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Docker Builder"
+  short_description: "Build and review secure container artifacts"
+  default_prompt: "Use $docker-builder to review this Docker artifact and make the smallest production-safe improvement."

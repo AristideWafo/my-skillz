@@ -1,0 +1,4 @@
+interface:
+  display_name: "Document Coauthoring"
+  short_description: "Draft clear technical and decision documents"
+  default_prompt: "Use $doc-coauthoring to turn this context into a concise document that works for its intended readers."
