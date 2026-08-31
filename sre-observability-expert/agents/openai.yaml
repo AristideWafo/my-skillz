@@ -1,0 +1,4 @@
+interface:
+  display_name: "SRE and Observability Expert"
+  short_description: "Diagnose incidents and reliability problems"
+  default_prompt: "Use $sre-observability-expert to assess this incident or reliability problem from evidence and reduce impact safely."

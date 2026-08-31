@@ -1,0 +1,4 @@
+interface:
+  display_name: "Ansible Project Builder"
+  short_description: "Design and review reliable Ansible projects"
+  default_prompt: "Use $ansible-project-builder to review this Ansible change and validate its safety and idempotence."
