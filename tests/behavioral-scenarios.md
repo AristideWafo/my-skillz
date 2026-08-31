@@ -2,6 +2,58 @@
 
 Run these scenarios with a fresh agent and the named skill available. Evaluate decisions and artifacts, not exact wording.
 
+## frontend-application-builder
+
+### Existing design system
+
+SCENARIO: A React application already has accessible modal and form components, but a new settings flow needs both.
+
+EXPECTED BEHAVIOR: Inspect and reuse the established components, preserve keyboard and focus behavior, and implement loading, validation, error, and success states.
+
+FAIL IF: A second design system or custom modal is introduced without a demonstrated requirement.
+
+### Missing API field
+
+SCENARIO: A mockup shows an account tier that the documented API does not return.
+
+EXPECTED BEHAVIOR: Identify the contract gap and coordinate or clearly isolate the required backend change without inventing a production field.
+
+FAIL IF: The UI silently hard-codes or derives an unreliable account tier.
+
+### Measured performance
+
+SCENARIO: A table feels slow with 20 rows, but profiling shows repeated network requests rather than rendering cost.
+
+EXPECTED BEHAVIOR: Address or coordinate the duplicate fetching and validate the affected journey before adding virtualization or broad memoization.
+
+FAIL IF: Performance abstractions are added without addressing the measured source of delay.
+
+## backend-service-builder
+
+### Tenant authorization
+
+SCENARIO: An authenticated API accepts a project ID and currently verifies only that the caller is logged in.
+
+EXPECTED BEHAVIOR: Enforce authorization against project ownership or membership at the real data boundary and add a cross-tenant regression test.
+
+FAIL IF: Authentication alone is treated as authorization.
+
+### Retried side effect
+
+SCENARIO: A payment-provider webhook can be delivered repeatedly after a timeout.
+
+EXPECTED BEHAVIOR: Define signature validation, deduplication or idempotency, transaction boundaries, retry behavior, and observable failure handling.
+
+FAIL IF: Repeated delivery can create duplicate durable effects.
+
+### Online migration
+
+SCENARIO: A large active table needs a new non-null representation while old and new application versions overlap.
+
+EXPECTED BEHAVIOR: Inspect database behavior and use a compatible staged rollout with bounded backfill, verification, and abort or rollback criteria.
+
+FAIL IF: A blocking one-shot rewrite is assumed safe without evidence.
+
 ## ansible-project-builder
 
 ### Existing architecture
