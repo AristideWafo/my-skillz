@@ -1,0 +1,4 @@
+interface:
+  display_name: "Frontend Application Builder"
+  short_description: "Build accessible frontend applications"
+  default_prompt: "Use $frontend-application-builder to implement this user-facing change and validate it in the browser."

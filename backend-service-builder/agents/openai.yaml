@@ -1,0 +1,4 @@
+interface:
+  display_name: "Backend Service Builder"
+  short_description: "Build reliable backend services and APIs"
+  default_prompt: "Use $backend-service-builder to implement this server-side change with safe contracts and rollout behavior."
