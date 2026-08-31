@@ -40,3 +40,5 @@ For each panel, record purpose, query owner, unit, expected range, abnormal inte
 ## JSON generation
 
 Inspect the target Grafana version, datasource UID/type, provisioning method, existing JSON model, variables, and library panels before generating JSON. Validate imported JSON in a non-production Grafana instance or with the repository's schema/tooling.
+
+Keep credentials and tokens outside dashboard JSON and provisioning files. Reuse the project's secret references and service-account pattern. Confirm the destination organization, folder, and datasource permissions before import; an apparently harmless dashboard can reveal restricted metrics, logs, labels, internal URLs, or annotations.

@@ -29,6 +29,13 @@ Treat panel counts as a cognitive-load budget, not an absolute limit. Split a da
 - Tie paging alerts to user or service impact and an actionable response. Diagnostic dashboards may contain useful signals that are not themselves SLO indicators.
 - Version critical dashboard JSON and validate it against the target Grafana version and datasource.
 
+## Access and provisioning safety
+
+- Preserve the target organization, folder, team, and datasource permission model. Apply least privilege to editors, viewers, service accounts, and provisioning identities; do not broaden access merely to make an import succeed.
+- Treat datasource credentials, API tokens, signed URLs, internal endpoints, and sensitive queries or labels as protected data. Reference the repository's secret mechanism instead of embedding values in dashboard JSON, provisioning files, examples, logs, or screenshots.
+- Treat dashboard permissions as presentation-layer controls, not a substitute for authorization at the datasource or tenant boundary. Verify both when a dashboard exposes restricted data.
+- Review exported dashboards before sharing them outside their intended audience, and require explicit authorization before changing shared folders, organizations, service accounts, or live provisioning.
+
 ## Read references selectively
 
 - Layout and panel patterns: [references/dashboard-templates.md](references/dashboard-templates.md)

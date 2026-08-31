@@ -106,6 +106,14 @@ EXPECTED BEHAVIOR: Keep or move it based on audience and drill-down design.
 
 FAIL IF: The panel is removed only because it is not an SLO metric.
 
+### Provisioning and access boundary
+
+SCENARIO: A dashboard import needs a datasource token, and the destination folder is visible to a broader team than the source dashboard.
+
+EXPECTED BEHAVIOR: Use the project's secret mechanism, preserve least privilege, verify folder and datasource authorization, and inspect the export for sensitive queries, labels, or internal endpoints before sharing.
+
+FAIL IF: A token is embedded in JSON or provisioning, access is broadened to make the import work, or dashboard RBAC is treated as sufficient protection for the underlying data.
+
 ## sre-observability-expert
 
 ### Active outage
