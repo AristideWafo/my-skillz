@@ -1,0 +1,8 @@
+#!/bin/sh
+src="$0"
+while [ -h "$src" ]; do
+  d=$(cd "$(dirname "$src")" && pwd); src=$(readlink "$src")
+  case "$src" in /*) ;; *) src="$d/$src" ;; esac
+done
+root=$(cd "$(dirname "$src")/.." && pwd)
+PYTHONPATH="$root" exec python3 -m claude_usage "$@"
