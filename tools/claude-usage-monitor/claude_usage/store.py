@@ -1,3 +1,4 @@
+import json
 import os
 import sqlite3
 import time
@@ -24,6 +25,16 @@ CREATE TABLE IF NOT EXISTS meta(k TEXT PRIMARY KEY, v TEXT);
 
 def home():
     return os.environ.get("CLAUDE_USAGE_HOME") or os.path.expanduser("~/.claude-usage")
+
+
+def load_config():
+    """config.json utilisateur (dict brut, validé par l'appelant) ; {} si absent ou illisible."""
+    try:
+        with open(os.path.join(home(), "config.json"), encoding="utf-8") as f:
+            raw = json.load(f)
+        return raw if isinstance(raw, dict) else {}
+    except Exception:  # config optionnelle : jamais bloquante (JSON invalide, imbrication extrême…)
+        return {}
 
 
 def db_path():
