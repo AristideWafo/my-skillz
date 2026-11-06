@@ -8,7 +8,7 @@ import unittest
 from contextlib import redirect_stdout
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
-from claude_usage import cli, install, metrics, store, tokens  # noqa: E402
+from claude_usage import cli, install, metrics, ponr, store, tokens  # noqa: E402
 
 H = 3600
 NOW = 1_800_000_000
@@ -232,9 +232,51 @@ class Cli(unittest.TestCase):
         self.assertIn("Session 5h: 72% (+5) | Reset: 1h40 | Semaine: 68% (+1)", long)
         _, again = self.run_cli(["statusline"], "{}")  # nouvelle session sans rate_limits
         self.assertTrue(again.startswith("5h 72% (+5) | W 68% (+1)"), again)
+        self.assertTrue(short.rstrip().endswith("PONR ?"), short)  # rapport 5h/hebdo pas encore appris
+        self.assertIn("PONR: ?", long)
+
+    def test_statusline_ponr_segment_with_history(self):
+        now = int(time.time())
+        conn = store.connect()
+        r7 = now + 20 * H
+        for ts, p5, w in ((now - 2 * H, 0, 40), (now - H, 25, 42.5), (now - 60, 50, 45)):
+            for lt, pct, r in (("five_hour", p5, now + 3 * H), ("seven_day", w, r7)):
+                conn.execute("INSERT INTO limit_samples(ts,source,limit_type,pct,resets_at) VALUES(?,?,?,?,?)",
+                             (ts, "t", lt, pct, r))
+        conn.commit()
+        conn.close()
+        _, out = self.run_cli(["statusline"], "{}")
+        # k = 0.1 ; capacité 50 + 17h*20 = 390 ; max 45 + 39 = 84 % < 95 % => rouge
+        self.assertIn("| PONR 🔴 -11pp", out)
+        _, rep = self.run_cli(["ponr"])
+        self.assertIn("ROUGE", rep)
+        self.assertIn("déjà franchi", rep)
+        with open(os.path.join(self.dir.name, "config.json"), "w") as f:
+            json.dump({"statusline": False, "weekly_target": 150}, f)
+        _, out = self.run_cli(["statusline"], "{}")
+        self.assertNotIn("PONR", out)  # désactivable
+        _, doc = self.run_cli(["doctor"])
+        self.assertIn("ignorées (inconnues ou invalides) : weekly_target", doc)
+
+    def test_report_survives_ponr_failure(self):
+        old = ponr.evaluate
+        ponr.evaluate = lambda *a, **k: 1 / 0
+        try:
+            rc, out = self.run_cli(["report"])
+        finally:
+            ponr.evaluate = old
+        self.assertEqual(rc, 0)
+        self.assertIn("PONR) : n/d", out)
+
+    def test_ponr_segment_never_shows_minus_zero(self):
+        p = ponr.Ponr("red", 95, 50, 94.7, -0.3, -0.3, 0.1, 10, 1, None, 0, "bonne", "")
+        self.assertEqual(cli._ponr_segment(p, "short"), "PONR 🔴 -1pp")
+        p = p._replace(state="orange", distance=3.4, eta_s=3 * H + 1200)
+        self.assertEqual(cli._ponr_segment(p, "short"), "PONR 🟠 +3pp | ETA 3h20")
+        self.assertEqual(cli._ponr_segment(p._replace(confidence="faible"), "short"), "PONR 🟠 +3pp")
 
     def test_commands_with_empty_db(self):
-        for cmd in ("status", "report", "forecast", "history", "tokens", "doctor"):
+        for cmd in ("status", "report", "forecast", "ponr", "history", "tokens", "doctor"):
             self.assertEqual(self.run_cli([cmd])[0], 0, cmd)
 
     def test_install_backup_and_uninstall(self):
@@ -274,6 +316,181 @@ class Tokens(unittest.TestCase):
                 f.write(line(10) + "\n" + line(50) + '\nnot json "usage"\n')
             t = tokens.scan(0, root=d)
             self.assertEqual((t["messages"], t["output"], t["cache_read"]), (1, 50, 7))
+
+
+K = 0.1  # pts hebdo par pt 5h dans les scénarios
+
+
+def learned(now, r7, w_end=45.0):
+    """Fenêtre 5h passée (0->50 entre -15h et -13h, expirée à -10h) puis inactivité : k = 0.1."""
+    r5 = now - 10 * H
+    rows5 = [(now - 15 * H, 0, r5), (now - 14 * H, 25, r5), (now - 13 * H, 50, r5)]
+    rows7 = [(now - 15 * H, w_end - 5, r7), (now - 14 * H, w_end - 2.5, r7), (now - 13 * H, w_end, r7),
+             (now, w_end, r7)]  # session ouverte maintenant : relevé hebdo frais
+    return rows5, rows7
+
+
+def usage(now, r7, hours, rate5, w0=30.0, step=900):
+    """Usage continu à rate5 pts 5h/h ; nouvelle fenêtre 5h dès la fin de la précédente."""
+    rows5, rows7 = [], []
+    t = start = now - int(hours * H)
+    p5, w = 0.0, w0
+    while t <= now:
+        if t >= start + 5 * H:
+            start, p5 = t, 0.0
+        rows5.append((t, p5, start + 5 * H))
+        rows7.append((t, w, r7))
+        dp = min(rate5 * step / H, 100 - p5)
+        p5, w, t = p5 + dp, w + K * dp, t + step
+    return rows5, rows7
+
+
+class Ponr(unittest.TestCase):
+    def test_capacity_rolling_windows(self):
+        self.assertAlmostEqual(ponr.capacity_5h(40, NOW + 2 * H, NOW, NOW + 12 * H), 60 + 200)
+        self.assertAlmostEqual(ponr.capacity_5h(40, NOW - H, NOW, NOW + 10 * H), 200)  # fenêtre expirée
+        self.assertAlmostEqual(ponr.capacity_5h(None, None, NOW, NOW + 5 * H), 100)  # reset 5h inconnu
+        self.assertAlmostEqual(ponr.capacity_5h(0, NOW + 4 * H, NOW, NOW + 2 * H), 40)  # reset hebdo avant le 5h : 20 pts/h max
+        self.assertAlmostEqual(ponr.capacity_5h(90, NOW + 4 * H, NOW, NOW + 2 * H), 10)
+        self.assertEqual(ponr.capacity_5h(0, NOW + H, NOW, NOW - 1), 0)
+        self.assertAlmostEqual(ponr.capacity_5h(120, NOW + H, NOW, NOW + H), 0)  # 5h saturé
+
+    def test_max_reachable_capped(self):
+        self.assertEqual(ponr.max_reachable(90, 0.1, 1000), 100)
+        rows5, rows7 = learned(NOW, NOW + 100 * H)
+        p = ponr.evaluate(rows5, rows7, NOW)
+        self.assertEqual(p.max_reach, 100)
+        self.assertAlmostEqual(p.distance, 5)
+        self.assertAlmostEqual(p.slack, 45 + 200 - 95)
+
+    def test_exchange_ratio(self):
+        rows5, rows7 = learned(NOW, NOW + 30 * H)
+        r = ponr.exchange_ratio(rows5, rows7, NOW)
+        self.assertAlmostEqual(r.k, K)
+        self.assertEqual(r.confidence, "moyenne")
+        self.assertIsNone(ponr.exchange_ratio(rows5[:1], rows7, NOW).k)
+
+    def test_ratio_uses_stepwise_weekly_and_skips_5h_resets(self):
+        # Hebdo écrit seulement quand il change (dédoublonnage) ; intervalle à cheval sur un reset 5h ignoré.
+        r7 = NOW + 30 * H
+        rows5 = [(NOW - 4 * H, 0, NOW - 2 * H), (NOW - 3 * H, 30, NOW - 2 * H),
+                 (NOW - H, 0, NOW + 4 * H), (NOW - 1800, 20, NOW + 4 * H)]
+        rows7 = [(NOW - 4 * H, 10, r7), (NOW - 3 * H, 13, r7), (NOW - 1800, 15, r7)]
+        r = ponr.exchange_ratio(rows5, rows7, NOW)
+        self.assertAlmostEqual(r.k, (3 + 2) / 50.0)
+
+    def test_external_session_jump_counted_in_both_limits(self):
+        # Usage hors Claude Code : saut simultané des deux % entre deux relevés.
+        r5, r7 = NOW + 3 * H, NOW + 30 * H
+        rows5 = [(NOW - H, 10, r5), (NOW - 1800, 60, r5), (NOW, 62, r5)]
+        rows7 = [(NOW - H, 40, r7), (NOW - 1800, 45, r7), (NOW, 45.2, r7)]
+        self.assertAlmostEqual(ponr.exchange_ratio(rows5, rows7, NOW).k, K)
+
+    def test_ratio_ignores_inconsistent_decrease(self):
+        r5, r7 = NOW + 3 * H, NOW + 30 * H
+        rows5 = [(NOW - 3 * H, 0, r5), (NOW - 2 * H, 30, r5), (NOW - H, 20, r5)]
+        rows7 = [(NOW - 3 * H, 10, r7), (NOW - 2 * H, 13, r7), (NOW - H, 13, r7)]
+        self.assertAlmostEqual(ponr.exchange_ratio(rows5, rows7, NOW).k, K)
+
+    def test_comfortably_achievable(self):
+        p = ponr.evaluate(*learned(NOW, NOW + 60 * H), now=NOW)
+        self.assertEqual(p.state, "green")
+        self.assertGreater(p.eta_s, 12 * H)
+
+    def test_approaching_by_eta(self):
+        p = ponr.evaluate(*learned(NOW, NOW + 30 * H), now=NOW)
+        self.assertEqual(p.state, "orange")  # distance plafonnée 5 pp mais la marge brute fond à ~2 pp/h
+        self.assertAlmostEqual(p.slack, 10)
+        self.assertTrue(1.5 < p.approach_rate < 2.5, p.approach_rate)
+        self.assertTrue(4 * H < p.eta_s < 7 * H, p.eta_s)
+
+    def test_at_point_of_no_return(self):
+        p = ponr.evaluate(*learned(NOW, NOW + 25 * H), now=NOW)
+        self.assertAlmostEqual(p.distance, 0)
+        self.assertEqual(p.state, "orange")
+
+    def test_unreachable(self):
+        p = ponr.evaluate(*learned(NOW, NOW + 20 * H), now=NOW)
+        self.assertAlmostEqual(p.max_reach, 85)
+        self.assertAlmostEqual(p.distance, -10)
+        self.assertEqual(p.state, "red")
+        self.assertIsNone(p.eta_s)
+
+    def test_red_needs_unreachable_not_high_usage(self):
+        rows5, rows7 = usage(NOW, NOW + 50 * H, 4, 25)  # 5h saturé, mais beaucoup de temps
+        p = ponr.evaluate(rows5, rows7, NOW)
+        self.assertGreaterEqual(rows5[-1][1], 99)
+        self.assertNotEqual(p.state, "red")
+
+    def test_target_already_reached(self):
+        rows5, rows7 = learned(NOW, NOW + 10 * H, w_end=96)
+        p = ponr.evaluate(rows5, rows7, NOW)
+        self.assertEqual(p.state, "green")
+        self.assertIn("atteint", p.reason)
+        self.assertIsNone(p.eta_s)  # pas de point de non-retour pour un objectif déjà atteint
+
+    def test_configurable_target(self):
+        rows5, rows7 = learned(NOW, NOW + 20 * H)
+        self.assertEqual(ponr.evaluate(rows5, rows7, NOW).state, "red")
+        p = ponr.evaluate(rows5, rows7, NOW, ponr.config({"weekly_target": 80}))
+        self.assertEqual((p.state, round(p.distance)), ("orange", 5))  # atteignable mais marge qui fond
+        self.assertEqual(ponr.evaluate(rows5, rows7, NOW, ponr.config({"weekly_target": 50})).state, "green")
+
+    def test_config_validation(self):
+        cfg = ponr.config({"weekly_target": 150, "orange_margin_pp": "x", "orange_eta_h": True, "trend_hours": 6})
+        self.assertEqual(cfg["weekly_target"], 95)
+        self.assertEqual(cfg["orange_margin_pp"], 2)
+        self.assertEqual(cfg["orange_eta_h"], 12)
+        self.assertEqual(cfg["trend_hours"], 6)
+        self.assertTrue(cfg["statusline"])
+        self.assertFalse(ponr.config({"statusline": False})["statusline"])
+        self.assertEqual(ponr.config(None), ponr.DEFAULTS)
+
+    def test_approach_rate_follows_consumption(self):
+        r7 = NOW + 40 * H
+        full = ponr.evaluate(*usage(NOW, r7, 6, 20), now=NOW).approach_rate
+        half = ponr.evaluate(*usage(NOW, r7, 6, 10), now=NOW).approach_rate
+        idle = ponr.evaluate(*learned(NOW, r7), now=NOW).approach_rate
+        self.assertLess(abs(full), 0.3)  # chaque fenêtre 5h remplie : aucune capacité perdue
+        self.assertLess(full, half)
+        self.assertLess(half, idle)
+
+    def test_insufficient_history_no_eta(self):
+        p = ponr.evaluate(*usage(NOW, NOW + 30 * H, 1, 20), now=NOW)
+        self.assertIsNotNone(p.k)
+        self.assertIsNone(p.approach_rate)
+        self.assertIsNone(p.eta_s)
+
+    def test_ratio_not_measurable(self):
+        r7 = NOW + 30 * H
+        p = ponr.evaluate([(NOW - 600, 3, NOW + H), (NOW, 5, NOW + H)], [(NOW - 600, 40, r7), (NOW, 40.2, r7)], NOW)
+        self.assertEqual((p.state, p.weekly), ("unknown", 40.2))
+
+    def test_missing_or_invalid_resets(self):
+        rows5, _ = learned(NOW, NOW + 30 * H)
+        self.assertEqual(ponr.evaluate(rows5, [(NOW, 40, None)], NOW).state, "unknown")
+        self.assertEqual(ponr.evaluate(rows5, [(NOW - H, 40, NOW - 1)], NOW).state, "unknown")  # hebdo expiré
+        self.assertEqual(ponr.evaluate([], [], NOW).state, "unknown")
+        _, rows7 = learned(NOW, NOW + 30 * H)
+        rows5 = [(t, p, None) for t, p, _ in rows5]  # resets 5h absents
+        self.assertEqual(ponr.evaluate(rows5, rows7, NOW).state, "unknown")  # k non mesurable sans resets 5h
+
+    def test_weekly_reset_boundary(self):
+        old5, old7 = learned(NOW, NOW - 5 * H, w_end=90)  # semaine précédente, close il y a 5h
+        r7 = NOW - 5 * H + 7 * 86400
+        new5, new7 = usage(NOW, r7, 3, 10, w0=0)
+        p = ponr.evaluate(old5 + new5, old7 + new7, NOW)
+        self.assertLess(p.weekly, 5)
+        self.assertLessEqual(p.trend_s, 3 * H)  # aucune distance calculée sur l'ancienne semaine
+        self.assertEqual(p.state, "green")
+
+    def test_large_gap_between_observations(self):
+        r7 = NOW + 30 * H
+        rows5, rows7 = learned(NOW - 8 * H, r7)
+        rows7 = rows7[:-1]  # dernier relevé il y a 21h
+        p = ponr.evaluate(rows5, rows7, NOW)
+        self.assertAlmostEqual(p.capacity, 600)  # fenêtre 5h expirée pendant le trou : capacité depuis maintenant
+        self.assertEqual(p.confidence, "faible")
 
 
 if __name__ == "__main__":
