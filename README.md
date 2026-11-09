@@ -11,6 +11,13 @@ bundled catalog marks account availability `UNKNOWN`; confirm a model, its
 permissions, billing basis, and data handling before enabling it. No global
 configuration or user project is changed by a routing decision.
 
+The installer turns each role's default profile into a native Codex
+`model_reasoning_effort` (`HIGH_REASONING`/`SECURITY_CRITICAL` → `high`,
+`BALANCED` → `medium`, `FAST` → `low`; `LONG_CONTEXT` stays inherited), so the
+architect and reviewer reason deeply and implementers stay economical. A value
+already pinned in an agent TOML is kept. Agents no longer read the router guide on
+every run; they consult it only when asked to select a model.
+
 See [the Model Router guide](docs/model-router-v01.md) for an example request,
 policy, adapter modes, limits, and the verification boundary. Run its simulated
 tests with `python3 -m unittest discover -s tests -p 'test_model_router_*.py'`
@@ -50,7 +57,21 @@ Five equivalent project-scoped agents are provided in Claude and Codex formats:
 | `software-reviewer` | Independent correctness, security, and test review | Read-only |
 | `solution-architect` | Cross-boundary contracts and architecture decisions | Read-only |
 
-Claude discovers `.claude/agents/*.md`. Codex discovers `.codex/agents/*.toml`. Agent descriptions are intentionally narrow so small tasks stay with the primary agent and parallel agents do not edit overlapping files.
+Claude discovers `.claude/agents/*.md`. Codex discovers `.codex/agents/*.toml`. Agent descriptions are intentionally narrow so small tasks stay with the primary agent and parallel agents do not edit overlapping files; Claude descriptions also say when to use each agent proactively.
+
+To keep token use low, every agent returns a handoff of at most 15 lines (files changed, decisions, validation run, open risks) instead of code dumps, and `software-reviewer` reviews only the diff and the call paths it touches. Each subagent starts with its own context, so delegation is reserved for substantial work.
+
+### Manager mode
+
+[manager/AGENTS.md](manager/AGENTS.md) makes the primary agent delegate on its own, without the user asking for subagents:
+
+| Task | Delegation |
+|---|---|
+| Small or tightly coupled change | None, the primary agent does it |
+| Bounded change in one layer | One implementer, then `software-reviewer` if material |
+| Cross-boundary change or unresolved contracts | `solution-architect` → parallel implementers on disjoint files → `software-reviewer` |
+
+At most three agents run at once; the primary agent states the plan in one line, briefs each agent with only what it needs, and runs the integrated validation itself. Spawned subagents ignore these rules and never spawn agents. See [Installing or using](#installing-or-using) for where it is installed.
 
 ## Hooks
 
