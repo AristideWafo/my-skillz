@@ -1,6 +1,6 @@
 ---
 name: frontend-implementer
-description: Implements or debugs a bounded browser-facing feature after requirements and API contracts are sufficiently clear. Use for UI code, interactions, responsive behavior, accessibility, and frontend tests; do not use for broad architecture or unrelated backend changes.
+description: Implements or debugs a bounded browser-facing feature after requirements and API contracts are sufficiently clear. Use for UI code, interactions, responsive behavior, accessibility, and frontend tests; do not use for broad architecture or unrelated backend changes. Use proactively for substantial frontend work; handle one-line fixes directly.
 tools: Read, Grep, Glob, Bash, Edit, Write, Skill
 permissionMode: default
 skills:

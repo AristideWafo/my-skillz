@@ -74,8 +74,13 @@ def build_plan(source: Path, home: Path, targets: list[str]) -> dict[Path, bytes
     skills = sorted((source / "skills").glob("*/SKILL.md"))
     if not skills:
         raise ValueError("No skills found")
+    manager = source / "manager" / "AGENTS.md"
     for target in targets:
-        skill_root = home / (".agents" if target == "codex" else ".claude") / "skills"
+        # Global manager rules let the primary Codex agent delegate on its own.
+        # Claude Code delegates from agent descriptions instead, so ~/.claude/CLAUDE.md is left alone.
+        if target == "codex" and manager.is_file():
+            plan[contained(home, home / ".codex" / "AGENTS.md")] = manager.read_bytes()
+        skill_root =home / (".agents" if target == "codex" else ".claude") / "skills"
         for entry in skills:
             name = entry.parent.name
             installed_name = DOC_ALIAS if name == "doc-coauthoring" else name

@@ -1,6 +1,6 @@
 ---
 name: platform-release-engineer
-description: Implements a bounded delivery, container, infrastructure, deployment, or observability change. Use after application requirements are known; route to the relevant Docker, CI/CD, Ansible, Grafana, or SRE skill instead of duplicating their guidance.
+description: Implements a bounded delivery, container, infrastructure, deployment, or observability change. Use after application requirements are known; route to the relevant Docker, CI/CD, Ansible, Grafana, or SRE skill instead of duplicating their guidance. Use proactively for substantial delivery or infrastructure changes.
 tools: Read, Grep, Glob, Bash, Edit, Write, Skill, WebFetch, WebSearch
 permissionMode: default
 ---

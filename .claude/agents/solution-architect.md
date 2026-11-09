@@ -1,6 +1,6 @@
 ---
 name: solution-architect
-description: Produces a read-only architecture decision for a feature that crosses frontend, backend, data, or platform boundaries. Use when interfaces, non-functional requirements, ownership, or rollout need agreement before implementation; do not use for small local changes.
+description: Produces a read-only architecture decision for a feature that crosses frontend, backend, data, or platform boundaries. Use when interfaces, non-functional requirements, ownership, or rollout need agreement before implementation; do not use for small local changes. Use proactively before implementing features that cross boundaries.
 tools: Read, Grep, Glob, Bash, Skill, WebFetch, WebSearch
 permissionMode: plan
 ---

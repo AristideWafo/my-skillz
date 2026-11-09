@@ -112,6 +112,15 @@ directory. It installs the document skill as `my-skillz-doc-coauthoring` to avoi
 colliding with a synced `doc-coauthoring`, and adjusts installed agent references.
 Agents receive exact local entrypoint paths and load only relevant references.
 
+For Codex, the installer also writes `manager/AGENTS.md` to `~/.codex/AGENTS.md`.
+It makes the primary agent act as a manager in every repository: it handles small
+changes itself and delegates to the five agents on its own only for substantial or
+cross-boundary work (at most three at once, disjoint file ownership, reviewer on the
+diff). Spawned subagents ignore these rules and never spawn further agents. An
+existing unmanaged `~/.codex/AGENTS.md` stops the installation; merge it by hand.
+Claude Code picks subagents from their descriptions, which say when to use them
+proactively, so `~/.claude/CLAUDE.md` is never touched.
+
 Installation is preview-only unless `--apply` is supplied. An inventory with
 SHA-256 hashes lives in `~/.my-skillz/manifest.json`; updates back up managed files
 under `~/.my-skillz/backups`. Unmanaged conflicts and locally modified files stop

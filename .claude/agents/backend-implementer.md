@@ -1,6 +1,6 @@
 ---
 name: backend-implementer
-description: Implements or debugs a bounded backend feature after contracts and ownership are sufficiently clear. Use for APIs, services, jobs, persistence, migrations, authorization, and backend tests; do not use for frontend presentation or broad architecture exploration.
+description: Implements or debugs a bounded backend feature after contracts and ownership are sufficiently clear. Use for APIs, services, jobs, persistence, migrations, authorization, and backend tests; do not use for frontend presentation or broad architecture exploration. Use proactively for substantial backend work; handle one-line fixes directly.
 tools: Read, Grep, Glob, Bash, Edit, Write, Skill
 permissionMode: default
 skills:

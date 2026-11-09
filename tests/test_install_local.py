@@ -60,6 +60,16 @@ class InstallTests(unittest.TestCase):
                     self.assertIn(f'model_reasoning_effort = "{expected}"', text)
                 self.assertNotIn("before using it", text)
 
+    def test_manager_rules_installed_for_codex_only(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            home = Path(tmp)
+            codex = installer.build_plan(ROOT, home, ["codex"])
+            target = (home / ".codex/AGENTS.md").resolve()
+            self.assertEqual(codex[target], (ROOT / "manager/AGENTS.md").read_bytes())
+            self.assertIn(b"never spawn agents", codex[target])
+            claude = installer.build_plan(ROOT, home, ["claude"])
+            self.assertFalse(any(p.name in ("AGENTS.md", "CLAUDE.md") for p in claude))
+
     def test_pinned_effort_is_preserved(self):
         text = 'name = "x"\nmodel_reasoning_effort = "low"\ndeveloper_instructions = """\nhi\n"""\n'
         self.assertEqual(installer.with_effort(text, "high"), text)

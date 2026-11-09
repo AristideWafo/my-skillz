@@ -1,6 +1,6 @@
 ---
 name: software-reviewer
-description: Performs an independent read-only review of a proposed or completed change. Use after implementation or for a requested review to find correctness, security, contract, operability, and missing-test risks; do not edit the code.
+description: Performs an independent read-only review of a proposed or completed change. Use after implementation or for a requested review to find correctness, security, contract, operability, and missing-test risks; do not edit the code. Use proactively after any material code change, passing the diff.
 tools: Read, Grep, Glob, Bash, Skill, WebFetch, WebSearch
 permissionMode: plan
 ---
