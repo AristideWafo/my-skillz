@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "models": [
+    {
+      "id": "gpt-6.1-sol",
+      "provider": "openai",
+      "availability": "UNKNOWN",
+      "environments": ["codex"],
+      "privacy": "PUBLIC",
+      "tools": ["shell"],
+      "context_tokens": 500000,
+      "permissions": ["read", "write"],
+      "profiles": ["BALANCED", "HIGH_REASONING"],
+      "input_usd_per_million": 2.0,
+      "output_usd_per_million": 10.0,
+      "billing_basis": "API",
+      "source": "https://developers.openai.com/api/docs/models/gpt-6.1-sol",
+      "verified_at": "2026-11-09"
+    },
+    {
+      "id": "claude-sonnet-5-5",
+      "provider": "anthropic",
+      "availability": "UNKNOWN",
+      "environments": ["claude-code"],
+      "privacy": "PUBLIC",
+      "tools": ["shell"],
+      "context_tokens": 1000000,
+      "permissions": ["read", "write"],
+      "profiles": ["BALANCED", "HIGH_REASONING"],
+      "input_usd_per_million": 2.0,
+      "output_usd_per_million": 10.0,
+      "billing_basis": "API",
+      "source": "https://platform.claude.com/docs/en/models/overview",
+      "verified_at": "2026-11-09"
+    }
+  ]
+}

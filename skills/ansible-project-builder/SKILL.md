@@ -25,6 +25,9 @@ Produce the smallest safe Ansible change that fits the repository's existing arc
 - Validate configuration before any reload or restart. Do not rely on handler ordering to make an unsafe configuration safe.
 - Treat a zero-change second run as the default idempotence test. Document intentional non-idempotent operations instead of hiding them.
 - Tune forks, fact gathering, caching, serial batches, and strategy from measurements and target constraints rather than fixed universal values.
+- For interrupted or partial runs, inspect actual host state before retrying. A failed task is not proof that its side effect did not happen; do not restart an entire fleet to recover a small failed cohort.
+- Separate task success from service success. A configuration can apply cleanly while the listener, cluster membership, or user request fails.
+- Reuse authorization already given for the exact operation and targets; ask again only when scope or risk materially changes.
 
 ## Read references selectively
 
@@ -36,6 +39,7 @@ Produce the smallest safe Ansible change that fits the repository's existing arc
 - Molecule and Ansible-specific CI: [references/cicd.md](references/cicd.md)
 - Pull-mode architecture: [references/ansible-pull.md](references/ansible-pull.md)
 - Review heuristics: [references/anti-patterns.md](references/anti-patterns.md)
+- Rolling changes, interruption, and recovery: [references/rollout-recovery.md](references/rollout-recovery.md)
 
 ## Validation and done
 

@@ -200,10 +200,13 @@ def validate_agents(errors: list[str]) -> None:
                 errors.append(f"{relative(path)}: missing {required}")
         if values.get("name") != name:
             errors.append(f"{relative(path)}: name must match filename")
-        if name in READ_ONLY_AGENTS and values.get("sandbox_mode") != "read-only":
-            errors.append(f"{relative(path)}: review/design agents must be read-only")
-        if name in WRITABLE_AGENTS and values.get("sandbox_mode") != "workspace-write":
-            errors.append(f"{relative(path)}: implementation agents must use workspace-write")
+        if "sandbox_mode" in values:
+            errors.append(f"{relative(path)}: sandbox belongs to the parent session, not the agent")
+        if name in READ_ONLY_AGENTS and not re.search(
+            r"without (?:modifying|editing)|do not (?:edit|modify)",
+            values.get("developer_instructions", ""), re.IGNORECASE,
+        ):
+            errors.append(f"{relative(path)}: review/design agents need an explicit no-edit instruction")
 
 
 def validate_hooks(errors: list[str]) -> None:
@@ -235,20 +238,27 @@ def validate_hooks(errors: list[str]) -> None:
             errors.append(f"{relative(path)}: invalid Python: {exc}")
 
 
+def discover_skills(root: Path, errors: list[str]) -> list[Path]:
+    skills_root = root / "skills"
+    if not skills_root.is_dir():
+        errors.append("skills directory is missing")
+        return []
+    directories = sorted(p for p in skills_root.iterdir() if p.is_dir() and not p.name.startswith("."))
+    found = []
+    for directory in directories:
+        if (directory / "SKILL.md").is_file():
+            found.append(directory)
+        else:
+            errors.append(f"skills/{directory.name}: missing SKILL.md")
+    if not found:
+        errors.append("no skills found in skills/")
+    return found
+
+
 def main() -> int:
     errors: list[str] = []
     warnings: list[str] = []
-    skill_dirs = sorted(path.parent for path in ROOT.glob("*/SKILL.md"))
-
-    if not skill_dirs:
-        errors.append("no top-level skills found")
-
-    for directory in sorted(path for path in ROOT.iterdir() if path.is_dir()):
-        if directory.name.startswith(".") or directory.name in {"docs", "scripts", "tests"}:
-            continue
-        markdown_files = list(directory.glob("*.md"))
-        if markdown_files and not (directory / "SKILL.md").exists():
-            errors.append(f"{relative(directory)}: Markdown content without SKILL.md")
+    skill_dirs = discover_skills(ROOT, errors)
 
     for skill_dir in skill_dirs:
         validate_skill(skill_dir, errors, warnings)

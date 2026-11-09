@@ -28,6 +28,13 @@ Help the user produce a document that achieves a defined outcome for a specific 
 - Use diagrams, tables, appendices, or examples only when they materially improve understanding.
 - Do not expose private discussions, credentials, or personal data merely because they appeared in source context.
 - Use whichever file and editing tools the current agent provides. Do not assume product-specific tool names or integrations.
+- Attach decision-driving claims to evidence with its scope and date when those affect validity. An accessible source is not necessarily current or authoritative for the claim.
+- When a constraint changes, trace its consequences through alternatives, costs, risks, recommendation, and summary. Preserve accepted decisions unless new evidence or the user's request calls for reconsideration.
+- Keep proposed actions distinct from approved commitments; do not invent approval, owners, dates, or test results to make a document appear complete.
+
+## Read references selectively
+
+- Conflicting sources, decision records, substantial revisions, and consistency checks: [references/evidence-and-revisions.md](references/evidence-and-revisions.md)
 
 ## Reader validation
 

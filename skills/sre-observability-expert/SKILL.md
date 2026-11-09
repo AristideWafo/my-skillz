@@ -32,6 +32,9 @@ Reduce user impact with evidence-based operational decisions, then improve the s
 - Mitigate first during material incidents; root-cause analysis may continue after service is stable.
 - Preserve an existing observability stack when it is coherent. Do not migrate tools merely for preference.
 - Avoid unbounded metric labels, sensitive log content, and sampling choices that make the required question impossible to answer.
+- Check telemetry freshness and coverage before interpreting a healthy graph as recovery. Compare user-facing outcomes, traffic served, and backlog rather than only process health.
+- For each costly investigation, state what observation would distinguish the leading explanations and when to stop. An inconclusive check updates uncertainty; it does not confirm the preferred cause.
+- Separate mitigation from repair: a restart, scale-up, or traffic shift may restore service while leaving corrupt state, queued work, or the original failure mechanism unresolved.
 
 ## Read references selectively
 
@@ -39,6 +42,7 @@ Reduce user impact with evidence-based operational decisions, then improve the s
 - Metrics, logs, traces, and telemetry stacks: [references/observability-stack.md](references/observability-stack.md)
 - Incident operations, resilience, capacity, and cost: [references/reliability-operations.md](references/reliability-operations.md)
 - Debugging and performance evidence: [references/debugging-performance.md](references/debugging-performance.md)
+- Competing hypotheses, recovery checks, and SLO semantics: [references/evidence-and-recovery.md](references/evidence-and-recovery.md)
 
 Use the Grafana skill for dashboard construction, the Docker skill for image/Compose artifacts, the Ansible skill for automation content, and the CI/CD skill for delivery workflows. Load another skill only when that artifact is actually in scope.
 

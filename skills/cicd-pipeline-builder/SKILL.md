@@ -27,6 +27,9 @@ Improve the existing delivery path without changing platforms or architecture un
 - Design database and contract changes for mixed-version operation when rollout is progressive.
 - Add timeouts, concurrency controls, cancellation behavior, and explicit rollback criteria to deployment jobs.
 - Measure delivery performance from timestamped deployment and incident events. Do not optimize teams toward stale benchmark tables.
+- Distinguish retrying a build from replaying a release or migration. After a timeout or cancellation, reconcile the actual external state before repeating a side effect.
+- Bind approval, verification, and deployment to the same artifact identity and intended environment. A successful check on another commit or rebuilt image is not evidence for the candidate.
+- Reuse existing authorization for the specified release; do not ask for approval again merely because the workflow reached its execution step. New environments or materially changed effects require a new scope decision.
 
 ## Read references selectively
 
@@ -34,6 +37,7 @@ Improve the existing delivery path without changing platforms or architecture un
 - Platform-neutral pipeline shapes: [references/pipelines.md](references/pipelines.md)
 - Supply-chain and credential controls: [references/security.md](references/security.md)
 - Current DORA measurement model: [references/dora.md](references/dora.md)
+- Cancellation, partial publication, and recovery tests: [references/failure-recovery.md](references/failure-recovery.md)
 
 ## Validation and done
 

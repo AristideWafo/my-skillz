@@ -28,6 +28,9 @@ Treat panel counts as a cognitive-load budget, not an absolute limit. Split a da
 - Document units, transformations, thresholds, and missing-data behavior.
 - Tie paging alerts to user or service impact and an actionable response. Diagnostic dashboards may contain useful signals that are not themselves SLO indicators.
 - Version critical dashboard JSON and validate it against the target Grafana version and datasource.
+- Establish each derived signal's population, time window, unit, and missing-data meaning before choosing a visualization. A plausible-looking chart is not proof of a correct query.
+- Preserve traffic weighting for fleet-wide ratios and the distribution needed for latency calculations; do not average instance percentages or percentiles without a valid interpretation.
+- Distinguish healthy zero, no traffic, stale collection, and failed queries in panels and alerts. Test variables and transformations as part of the query contract.
 
 ## Access and provisioning safety
 
@@ -40,6 +43,7 @@ Treat panel counts as a cognitive-load budget, not an absolute limit. Split a da
 
 - Layout and panel patterns: [references/dashboard-templates.md](references/dashboard-templates.md)
 - PromQL and LogQL reminders: [references/promql-logql-cheatsheet.md](references/promql-logql-cheatsheet.md)
+- Weighted aggregations, missing data, variable combinations, and query fixtures: [references/query-contracts-and-validation.md](references/query-contracts-and-validation.md)
 
 ## Validation and done
 

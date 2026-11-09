@@ -25,12 +25,15 @@ Produce a container artifact that fits the application and deployment platform w
 - Define health checks where the runtime consumes them and the signal is meaningful. Kubernetes startup, readiness, and liveness probes belong in workload manifests; they are not replaced by a Dockerfile `HEALTHCHECK`.
 - Use Compose for development, tests, and suitable single-host deployments. Do not claim it provides multi-host high availability or scheduling features it does not have.
 - Optimize caching after correctness. Copy stable dependency metadata before frequently changing source when that matches the build tool.
+- Test the final image under the target runtime's permissions, mounts, signals, and limits; a successful build or a development bind mount can conceal a broken shipped artifact.
+- For stateful changes, separate image rollback from data recovery. Verify compatibility with the data and ownership left by the newer container before restoring an older image.
 
 ## Read references selectively
 
 - Base images, stages, cache, entrypoints: [references/dockerfile.md](references/dockerfile.md)
 - Compose environments, networks, volumes, health: [references/compose.md](references/compose.md)
 - Image and runtime hardening: [references/security.md](references/security.md)
+- Artifact acceptance, failure behavior, and stateful recovery: [references/runtime-verification.md](references/runtime-verification.md)
 
 ## Validation and done
 
