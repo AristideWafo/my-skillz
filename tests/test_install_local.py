@@ -44,6 +44,8 @@ class InstallTests(unittest.TestCase):
             profiles = home / ".my-skillz/model_router/agent_profiles.json"
             self.assertTrue(profiles.is_file())
             self.assertIn(profiles.as_posix(), agent)
+            self.assertTrue((home / ".my-skillz/model_router/core.py").is_file())
+            self.assertTrue((home / ".my-skillz/model-router-v01.md").is_file())
 
     def test_conflict_aborts_before_writing_other_files(self):
         with tempfile.TemporaryDirectory() as tmp:

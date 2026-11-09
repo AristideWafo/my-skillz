@@ -118,10 +118,11 @@ under `~/.my-skillz/backups`. Unmanaged conflicts and locally modified files sto
 the installation before any planned write. No hooks or global permissions are
 installed or changed. Removed upstream files are not automatically deleted.
 Open a fresh session after the first installation to load the new agents.
-The installer also places the five-role Model Router profile map under
-`~/.my-skillz/model_router/` and points installed agents to that copy. Run the
-router from this checkout; the installer does not activate automatic model
-switching or install a background service.
+The installer also places the Model Router Python package and five-role profile
+map under `~/.my-skillz/model_router/`, its guide under `~/.my-skillz/`, and
+points installed agents to those paths. To import it outside this checkout,
+add `~/.my-skillz` to Python's module search path. The installer does not
+activate automatic model switching or install a background service.
 
 Codex custom agents inherit the parent session's sandbox and approval settings;
 the reviewer and architect's no-edit instructions are behavioral constraints,

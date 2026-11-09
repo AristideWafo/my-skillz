@@ -43,8 +43,14 @@ def build_plan(source: Path, home: Path, targets: list[str]) -> dict[Path, bytes
     plan = {}
     profile_source = source / "model_router" / "agent_profiles.json"
     profile_target = contained(home, home / ".my-skillz" / "model_router" / "agent_profiles.json")
-    if profile_source.is_file():
-        plan[profile_target] = profile_source.read_bytes()
+    router_source = source / "model_router"
+    if router_source.is_dir():
+        for item in sorted(router_source.iterdir()):
+            if item.is_file() and item.suffix in (".py", ".json"):
+                plan[contained(home, home / ".my-skillz" / "model_router" / item.name)] = item.read_bytes()
+        guide = source / "docs" / "model-router-v01.md"
+        if guide.is_file():
+            plan[contained(home, home / ".my-skillz" / "model-router-v01.md")] = guide.read_bytes()
     skills = sorted((source / "skills").glob("*/SKILL.md"))
     if not skills:
         raise ValueError("No skills found")
@@ -75,6 +81,8 @@ def build_plan(source: Path, home: Path, targets: list[str]) -> dict[Path, bytes
             for entry in skills:
                 name = DOC_ALIAS if entry.parent.name == "doc-coauthoring" else entry.parent.name
                 index += f"- {name}: {(skill_root / name / 'SKILL.md').as_posix()}\n"
+            if router_source.is_dir():
+                index += f"- Model Router V0.1 package: {(home / '.my-skillz' / 'model_router').as_posix()}; read {(home / '.my-skillz' / 'model-router-v01.md').as_posix()} before using it.\n"
             if extension == "toml":
                 close = text.rfind('"""')
                 if close < 0:
