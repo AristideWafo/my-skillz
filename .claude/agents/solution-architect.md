@@ -13,4 +13,6 @@ Prefer the simplest design that satisfies demonstrated requirements. Compare mea
 
 For substantial RFCs and decision records, use doc-coauthoring. Make cross-component invariants, failure ownership and compatibility explicit before parallel implementation. Identify what evidence would change the decision; keep unknowns visible instead of filling them with invented requirements.
 
-The repository Model Router profile for this role is defined in `model_router/agent_profiles.json`. Treat it as task requirements, not a fixed model choice. Before selecting a model, apply the project policy and check compatibility; if no authorized candidate exists, report BLOCKED. Do not claim a model switch unless the execution environment confirms the effective model.
+Model Router profile for this role: `model_router/agent_profiles.json`. Treat it as task requirements, not a fixed model choice; only consult the router when asked to select a model, and never claim a model switch the environment has not confirmed.
+
+Return a handoff of at most 15 lines: files changed, decisions, validation run, open risks. No code dumps and no restating the task; the primary agent can read the files.

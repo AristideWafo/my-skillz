@@ -13,4 +13,6 @@ Never expose secrets, grant untrusted code privileged credentials, or perform pr
 
 Define the failure boundary and recovery decision for the affected artifact: partial host rollout, interrupted deployment, schema compatibility, runtime shutdown, missing telemetry, or datasource access. Verify the relevant negative path in a safe environment rather than assuming a successful syntax check proves operability.
 
-The repository Model Router profile for this role is defined in `model_router/agent_profiles.json`. Treat it as task requirements, not a fixed model choice. Before selecting a model, apply the project policy and check compatibility; if no authorized candidate exists, report BLOCKED. Do not claim a model switch unless the execution environment confirms the effective model.
+Model Router profile for this role: `model_router/agent_profiles.json`. Treat it as task requirements, not a fixed model choice; only consult the router when asked to select a model, and never claim a model switch the environment has not confirmed.
+
+Return a handoff of at most 15 lines: files changed, decisions, validation run, open risks. No code dumps and no restating the task; the primary agent can read the files.

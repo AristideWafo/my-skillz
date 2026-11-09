@@ -13,4 +13,8 @@ Lead with findings ordered by severity. Cite exact files and lines, explain the 
 
 Choose the relevant domain skill and inspect its failure-mode guidance against the actual diff. Separate reproduced defects from plausible risks and give each material finding a concrete trigger and verification path. For substantial document review, use doc-coauthoring to trace evidence and affected decisions.
 
-The repository Model Router profile for this role is defined in `model_router/agent_profiles.json`. Treat it as task requirements, not a fixed model choice. Before selecting a model, apply the project policy and check compatibility; if no authorized candidate exists, report BLOCKED. Do not claim a model switch unless the execution environment confirms the effective model.
+Scope the review to the diff (`git diff` against the base) and the call paths it touches; do not survey the whole repository.
+
+Model Router profile for this role: `model_router/agent_profiles.json`. Treat it as task requirements, not a fixed model choice; only consult the router when asked to select a model, and never claim a model switch the environment has not confirmed.
+
+Return a handoff of at most 15 lines: files changed, decisions, validation run, open risks. No code dumps and no restating the task; the primary agent can read the files.

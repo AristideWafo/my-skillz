@@ -78,9 +78,14 @@ model, the result is `CONFLICT` and its existing configuration is preserved.
 For Codex, review the proposed `model = "<id>"` in the matching agent's TOML.
 For Claude Code, review `model: <id>` in that agent's YAML frontmatter. Add
 only the relevant field after reviewing the complete file and account policy;
-the generated snippet is intentionally not a whole agent definition. Codex
-also supports a reasoning-effort field, but V0.1 leaves it inherited and does
-not presume every model supports the same effort. Neither adapter sets or
+the generated snippet is intentionally not a whole agent definition. The
+adapters never set reasoning effort. Separately, `scripts/install_local.py`
+writes `model_reasoning_effort` into each installed Codex agent from its
+default profile (`FAST`→`low`, `BALANCED`→`medium`, `HIGH_REASONING` and
+`SECURITY_CRITICAL`→`high`; `LONG_CONTEXT` stays inherited) unless the source
+TOML already pins one. Effort stays model-independent; the model itself remains
+inherited. Agents do not read this guide unless asked to select a model, which
+keeps it out of every subagent's context. Neither adapter sets or
 overrides parent permissions, credentials, or provider access. Codex custom
 agents inherit their parent session permissions. Claude Code can override an
 agent's model at invocation, and organization allowlists may substitute it.

@@ -47,6 +47,24 @@ class InstallTests(unittest.TestCase):
             self.assertTrue((home / ".my-skillz/model_router/core.py").is_file())
             self.assertTrue((home / ".my-skillz/model-router-v01.md").is_file())
 
+    def test_codex_agents_get_effort_from_default_profile(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            home = Path(tmp)
+            plan = installer.build_plan(ROOT, home, ["codex"])
+            profiles = json.loads((ROOT / "model_router/agent_profiles.json").read_text(encoding="utf-8"))
+            for role, mapping in profiles["agents"].items():
+                text = plan[(home / ".codex/agents" / f"{role}.toml").resolve()].decode("utf-8")
+                expected = installer.PROFILE_EFFORT.get(mapping["default"])
+                self.assertEqual(text.count("model_reasoning_effort"), 1 if expected else 0, role)
+                if expected:
+                    self.assertIn(f'model_reasoning_effort = "{expected}"', text)
+                self.assertNotIn("before using it", text)
+
+    def test_pinned_effort_is_preserved(self):
+        text = 'name = "x"\nmodel_reasoning_effort = "low"\ndeveloper_instructions = """\nhi\n"""\n'
+        self.assertEqual(installer.with_effort(text, "high"), text)
+        self.assertEqual(installer.with_effort(text, None), text)
+
     def test_conflict_aborts_before_writing_other_files(self):
         with tempfile.TemporaryDirectory() as tmp:
             home = Path(tmp)

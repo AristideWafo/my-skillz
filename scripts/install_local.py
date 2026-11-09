@@ -11,11 +11,30 @@ from datetime import datetime, timezone
 import hashlib
 import json
 from pathlib import Path
+import re
 import shutil
 import uuid
 
 ROOT = Path(__file__).resolve().parents[1]
 DOC_ALIAS = "my-skillz-doc-coauthoring"
+# Codex reasoning effort applied from each role's default router profile.
+# LONG_CONTEXT says nothing about reasoning depth, so it keeps the inherited effort.
+PROFILE_EFFORT = {"FAST": "low", "BALANCED": "medium", "HIGH_REASONING": "high", "SECURITY_CRITICAL": "high"}
+
+
+def codex_effort(profiles: dict, role: str) -> str | None:
+    mapping = profiles.get("agents", {}).get(role)
+    return PROFILE_EFFORT.get(mapping["default"]) if mapping else None
+
+
+def with_effort(text: str, effort: str | None) -> str:
+    """Insert a top-level model_reasoning_effort unless the agent already pins one."""
+    if effort is None or re.search(r"^model_reasoning_effort\s*=", text, re.M):
+        return text
+    anchor = text.find("\ndeveloper_instructions")
+    if anchor < 0:
+        raise ValueError("Missing developer_instructions in Codex agent")
+    return text[:anchor] + f'\nmodel_reasoning_effort = "{effort}"' + text[anchor:]
 
 
 def digest(data: bytes) -> str:
@@ -51,6 +70,7 @@ def build_plan(source: Path, home: Path, targets: list[str]) -> dict[Path, bytes
         guide = source / "docs" / "model-router-v01.md"
         if guide.is_file():
             plan[contained(home, home / ".my-skillz" / "model-router-v01.md")] = guide.read_bytes()
+    profiles = json.loads(profile_source.read_text(encoding="utf-8")) if profile_source.is_file() else {}
     skills = sorted((source / "skills").glob("*/SKILL.md"))
     if not skills:
         raise ValueError("No skills found")
@@ -82,8 +102,9 @@ def build_plan(source: Path, home: Path, targets: list[str]) -> dict[Path, bytes
                 name = DOC_ALIAS if entry.parent.name == "doc-coauthoring" else entry.parent.name
                 index += f"- {name}: {(skill_root / name / 'SKILL.md').as_posix()}\n"
             if router_source.is_dir():
-                index += f"- Model Router V0.1 package: {(home / '.my-skillz' / 'model_router').as_posix()}; read {(home / '.my-skillz' / 'model-router-v01.md').as_posix()} before using it.\n"
+                index += f"- Model Router V0.1 package (only when asked to select a model): {(home / '.my-skillz' / 'model_router').as_posix()}; guide: {(home / '.my-skillz' / 'model-router-v01.md').as_posix()}\n"
             if extension == "toml":
+                text = with_effort(text, codex_effort(profiles, agent.stem))
                 close = text.rfind('"""')
                 if close < 0:
                     raise ValueError(f"Missing agent instruction block: {agent}")
