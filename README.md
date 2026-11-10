@@ -72,7 +72,15 @@ To keep token use low, every agent returns a handoff of at most 15 lines (files 
 | Cross-boundary change with an undecided contract | `solution-architect` first, then the primary agent implements |
 | Auth, authorization, secrets, payments, or data migrations | One `software-reviewer` pass at the end, on the diff |
 
-Hard limits: at most 2 subagents per request in total, strictly one after the other, the architect never in parallel with implementation, and the reviewer at most once. Briefs are at most 10 lines. Spawned subagents ignore these rules and never spawn agents. Every agent stays inside the files named in its brief, aims to finish within about 20 tool calls, and returns a handoff of at most 15 lines; the architect's decision is at most 30 lines.
+Hard limits: at most 2 subagents per request in total, strictly one after the other, the architect never in parallel with implementation, and the reviewer at most once. Briefs are at most 10 lines. To enforce one agent at a time in Codex itself, not only through instructions, add to `~/.codex/config.toml`:
+
+```toml
+[agents]
+max_threads = 1   # one open subagent at a time
+max_depth = 1     # subagents cannot spawn agents
+```
+
+The installer never edits `config.toml`; add these lines by hand. Spawned subagents ignore these rules and never spawn agents. Every agent stays inside the files named in its brief, aims to finish within about 20 tool calls, and returns a handoff of at most 15 lines; the architect's decision is at most 30 lines.
 
 ## Hooks
 

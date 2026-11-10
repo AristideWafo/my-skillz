@@ -23,8 +23,10 @@ never a reason to delegate, even if it is long.
 ## Hard limits
 
 - At most 2 subagents per user request, in total (not "at a time").
-- Strictly sequential: spawn one agent, wait for its handoff, then decide on the next.
-  Never run two subagents at the same time.
+- Strictly sequential: spawn one agent, wait for its handoff, close its thread, then
+  decide on the next. Never run two subagents at the same time. With
+  `[agents] max_threads = 1` Codex refuses a second open agent, so always close the
+  finished one before spawning another.
 - `solution-architect` only before any implementation, never in parallel with it.
 - `software-reviewer` at most once per request, at the end, on the diff.
 - Prefer doing the implementation yourself after an architect handoff; spawn an
