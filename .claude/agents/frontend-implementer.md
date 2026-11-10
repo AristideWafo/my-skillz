@@ -17,4 +17,6 @@ For asynchronous flows, verify stale responses, navigation or identity changes, 
 
 Model Router profile for this role: `model_router/agent_profiles.json`. Treat it as task requirements, not a fixed model choice; only consult the router when asked to select a model, and never claim a model switch the environment has not confirmed.
 
+Stay within the files and directories named in the brief and do not explore the rest of the repository. Aim to finish within about 20 tool calls; if the scope needs more, stop and report what blocks you instead of continuing.
+
 Return a handoff of at most 15 lines: files changed, decisions, validation run, open risks. No code dumps and no restating the task; the primary agent can read the files.

@@ -14,7 +14,8 @@ configuration or user project is changed by a routing decision.
 The installer turns each role's default profile into a native Codex
 `model_reasoning_effort` (`HIGH_REASONING`/`SECURITY_CRITICAL` → `high`,
 `BALANCED` → `medium`, `FAST` → `low`; `LONG_CONTEXT` stays inherited), so the
-architect and reviewer reason deeply and implementers stay economical. A value
+reviewer reasons deeply and implementers stay economical; `solution-architect` pins
+`medium` in its TOML to bound exploration. A value
 already pinned in an agent TOML is kept. Agents no longer read the router guide on
 every run; they consult it only when asked to select a model.
 
@@ -63,15 +64,15 @@ To keep token use low, every agent returns a handoff of at most 15 lines (files 
 
 ### Manager mode
 
-[manager/AGENTS.md](manager/AGENTS.md) makes the primary agent delegate on its own, without the user asking for subagents:
+[manager/AGENTS.md](manager/AGENTS.md) makes the primary agent the manager. Because each subagent starts a new context and costs about as much as a new session, it does the work itself by default and delegates only when:
 
-| Task | Delegation |
+| Trigger | Delegation |
 |---|---|
-| Small or tightly coupled change | None, the primary agent does it |
-| Bounded change in one layer | One implementer, then `software-reviewer` if material |
-| Cross-boundary change or unresolved contracts | `solution-architect` → parallel implementers on disjoint files → `software-reviewer` |
+| User explicitly asks for agents, a review, or an architecture decision | As asked |
+| Cross-boundary change with an undecided contract | `solution-architect` first, then the primary agent implements |
+| Auth, authorization, secrets, payments, or data migrations | One `software-reviewer` pass at the end, on the diff |
 
-At most three agents run at once; the primary agent states the plan in one line, briefs each agent with only what it needs, and runs the integrated validation itself. Spawned subagents ignore these rules and never spawn agents. See [Installing or using](#installing-or-using) for where it is installed.
+Hard limits: at most 2 subagents per request in total, strictly one after the other, the architect never in parallel with implementation, and the reviewer at most once. Briefs are at most 10 lines. Spawned subagents ignore these rules and never spawn agents. Every agent stays inside the files named in its brief, aims to finish within about 20 tool calls, and returns a handoff of at most 15 lines; the architect's decision is at most 30 lines.
 
 ## Hooks
 
@@ -134,10 +135,9 @@ colliding with a synced `doc-coauthoring`, and adjusts installed agent reference
 Agents receive exact local entrypoint paths and load only relevant references.
 
 For Codex, the installer also writes `manager/AGENTS.md` to `~/.codex/AGENTS.md`.
-It makes the primary agent act as a manager in every repository: it handles small
-changes itself and delegates to the five agents on its own only for substantial or
-cross-boundary work (at most three at once, disjoint file ownership, reviewer on the
-diff). Spawned subagents ignore these rules and never spawn further agents. An
+It makes the primary agent act as a manager in every repository: it works alone by
+default and delegates on its own only under the triggers and limits of
+[Manager mode](#manager-mode). Spawned subagents ignore these rules and never spawn further agents. An
 existing unmanaged `~/.codex/AGENTS.md` stops the installation; merge it by hand.
 Claude Code picks subagents from their descriptions, which say when to use them
 proactively, so `~/.claude/CLAUDE.md` is never touched.

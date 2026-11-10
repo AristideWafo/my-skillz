@@ -1,6 +1,7 @@
 """Exercise installation in isolated homes, never the user's settings."""
 import importlib.util
 import json
+import re
 from pathlib import Path
 import tempfile
 import unittest
@@ -54,7 +55,9 @@ class InstallTests(unittest.TestCase):
             profiles = json.loads((ROOT / "model_router/agent_profiles.json").read_text(encoding="utf-8"))
             for role, mapping in profiles["agents"].items():
                 text = plan[(home / ".codex/agents" / f"{role}.toml").resolve()].decode("utf-8")
-                expected = installer.PROFILE_EFFORT.get(mapping["default"])
+                source = (ROOT / ".codex/agents" / f"{role}.toml").read_text(encoding="utf-8")
+                pinned = re.search(r'^model_reasoning_effort = "(\w+)"', source, re.M)
+                expected = pinned.group(1) if pinned else installer.PROFILE_EFFORT.get(mapping["default"])
                 self.assertEqual(text.count("model_reasoning_effort"), 1 if expected else 0, role)
                 if expected:
                     self.assertIn(f'model_reasoning_effort = "{expected}"', text)
